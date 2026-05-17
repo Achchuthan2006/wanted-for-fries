@@ -1,6 +1,16 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import axios from "axios";
 import { sfx, unlockAudio, getMusic } from "./sounds";
+import {
+    pickTip,
+    unlockAchievement,
+    ACHIEVEMENTS,
+    getDailyChallenge,
+    reportChallengeProgress,
+    vibrate,
+    recordRun,
+    getBest,
+} from "./meta";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -99,8 +109,82 @@ function RadioBox({ radio }) {
     );
 }
 
+
+// ---------- Loading Screen with Tips ----------
+function LoadingScreen({ onDone, duration = 1800 }) {
+    const [tip] = useState(() => pickTip());
+    const [progress, setProgress] = useState(0);
+    useEffect(() => {
+        const start = performance.now();
+        let raf;
+        const tick = () => {
+            const p = Math.min(1, (performance.now() - start) / duration);
+            setProgress(p);
+            if (p < 1) raf = requestAnimationFrame(tick);
+            else setTimeout(onDone, 120);
+        };
+        raf = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(raf);
+    }, [onDone, duration]);
+    return (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center p-6 bg-black" data-testid="loading-screen">
+            <div className="loading-logo">
+                <div className="loading-fry" aria-hidden>🍟</div>
+                <div className="loading-spinner" aria-hidden />
+            </div>
+            <div className="loading-tip-eyebrow">PROTIP</div>
+            <p className="loading-tip" data-testid="loading-tip">{tip}</p>
+            <div className="loading-bar">
+                <div className="loading-bar-fill" style={{ width: `${progress * 100}%` }} />
+            </div>
+        </div>
+    );
+}
+
+// ---------- Pause Menu ----------
+function PauseMenu({ onResume, onRestart, onTitle }) {
+    return (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/75 backdrop-blur-sm" data-testid="pause-menu">
+            <div className="pause-card">
+                <div className="pause-eyebrow">⏸ PAUSED</div>
+                <h3 className="pause-title">Take a breath.</h3>
+                <p className="pause-sub">The fries can wait. Maybe.</p>
+                <div className="pause-actions">
+                    <button data-testid="resume-button" className="btn-arcade text-base" onClick={onResume}>
+                        ▶ Resume
+                    </button>
+                    <button data-testid="pause-restart" className="btn-arcade-secondary text-sm" onClick={onRestart}>
+                        ↻ Restart
+                    </button>
+                    <button data-testid="pause-title" className="btn-arcade-secondary text-sm" onClick={onTitle}>
+                        ⌂ Title
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ---------- Achievement Toast ----------
+function AchievementToast({ ach }) {
+    if (!ach) return null;
+    return (
+        <div className="ach-toast" data-testid="achievement-toast" key={ach._key}>
+            <div className="ach-toast-icon">{ach.emoji}</div>
+            <div className="ach-toast-text">
+                <div className="ach-toast-eyebrow">ACHIEVEMENT UNLOCKED</div>
+                <div className="ach-toast-title">{ach.title}</div>
+                <div className="ach-toast-desc">{ach.desc}</div>
+            </div>
+        </div>
+    );
+}
+
+
 // ---------- Animated Title Screen ----------
 function TitleScreen({ onStart }) {
+    const [daily] = useState(() => getDailyChallenge());
+    const [best] = useState(() => getBest());
     return (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center p-6 bg-black/70 backdrop-blur-sm overflow-hidden">
             {/* Animated background: falling fries */}
@@ -143,6 +227,21 @@ function TitleScreen({ onStart }) {
             >
                 Start Chase
             </button>
+
+            {/* Daily challenge card */}
+            <div className="title-daily" data-testid="daily-challenge">
+                <div className="title-daily-eyebrow">
+                    📅 Daily Challenge {daily.completed && <span className="title-daily-done">✓ Completed</span>}
+                </div>
+                <div className="title-daily-text">{daily.text}</div>
+            </div>
+
+            {/* Best score */}
+            {(best.distance > 0 || best.fries > 0) && (
+                <div className="title-best" data-testid="title-best">
+                    <span>🏆 Best: {best.distance}m · {best.fries}🍟</span>
+                </div>
+            )}
 
             <div className="absolute bottom-4 text-[10px] text-white/40 font-mono tracking-widest uppercase z-10">
                 Tap / Swipe / Arrow Keys
@@ -611,7 +710,7 @@ function GameOverTicket({ distance, fries, dodged, onRestart, onTitle, onReplay 
 
 // ---------- Main Game ----------
 export default function Game() {
-    const [screen, setScreen] = useState("title"); // title | intro | playing | caught | gameover
+    const [screen, setScreen] = useState("title"); // title | loading | intro | playing | paused | caught | gameover
     const [lane, setLane] = useState(1);
     const [distance, setDistance] = useState(0);
     const [fries, setFries] = useState(0);
@@ -667,6 +766,22 @@ export default function Game() {
     const frenzyEndAtRef = useRef(0);
     const turboEndAtRef = useRef(0);
     const lastTrailRef = useRef(0);
+
+    // Achievement queue (toast rendering)
+    const [achToast, setAchToast] = useState(null);
+    const achTimerRef = useRef(null);
+    const pushAchievement = useCallback((key) => {
+        const meta = unlockAchievement(key);
+        if (!meta) return;
+        setAchToast({ ...meta, _key: key + Date.now() });
+        if (achTimerRef.current) clearTimeout(achTimerRef.current);
+        achTimerRef.current = setTimeout(() => setAchToast(null), 2600);
+    }, []);
+
+    // Pause flag (also gates the game loop)
+    const [paused, setPaused] = useState(false);
+    const pausedRef = useRef(false);
+    useEffect(() => { pausedRef.current = paused; }, [paused]);
 
     const shellRef = useRef(null);
     const roadRef = useRef(null);
