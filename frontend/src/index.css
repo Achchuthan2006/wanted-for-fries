@@ -232,36 +232,134 @@ body {
     position: absolute;
     top: 70px;
     right: 12px;
-    width: 180px;
+    width: 200px;
     background: rgba(8,12,20,0.92);
     border: 2px solid #3b82f6;
     color: #93c5fd;
     border-radius: 12px;
-    padding: 8px 10px;
+    padding: 10px 10px 8px 10px;
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
-    line-height: 1.35;
+    line-height: 1.4;
     box-shadow: 0 6px 20px rgba(0,0,0,0.4);
     z-index: 30;
+    overflow: hidden;
+    transition: border-color 0.4s, color 0.4s, box-shadow 0.4s;
 }
-.radio-box::before {
-    content: "";
-    position: absolute;
-    top: 8px; left: 8px;
+.radio-box-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+.radio-led {
     width: 8px; height: 8px;
     border-radius: 50%;
     background: #ef4444;
     box-shadow: 0 0 8px #ef4444;
     animation: blink 1s infinite;
 }
-@keyframes blink { 50% { opacity: 0.3; } }
-.radio-box .label {
-    margin-left: 14px;
+.radio-led-small {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #fbbf24;
+    box-shadow: 0 0 6px #fbbf24;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+.radio-callsign {
     color: #fbbf24;
     font-weight: 700;
     text-transform: uppercase;
     font-size: 10px;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
+    flex: 1;
+}
+.radio-stage {
+    color: #93c5fd;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 1px 5px;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    opacity: 0.7;
+}
+.radio-line {
+    min-height: 38px;
+    text-shadow: 0 0 4px currentColor;
+    filter: drop-shadow(0 0 1px currentColor);
+}
+.radio-cursor {
+    display: inline-block;
+    animation: blink 0.8s infinite;
+    margin-left: 1px;
+}
+@keyframes blink { 50% { opacity: 0.25; } }
+
+/* Static overlay (scanlines + flicker) */
+.radio-static-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.18;
+    background:
+        repeating-linear-gradient(0deg,
+            rgba(255,255,255,0.06) 0 1px,
+            transparent 1px 3px);
+    mix-blend-mode: screen;
+    animation: static-flicker 0.18s steps(2) infinite;
+}
+@keyframes static-flicker {
+    0%, 49% { opacity: 0.12; transform: translateY(0); }
+    50%, 100% { opacity: 0.22; transform: translateY(1px); }
+}
+
+/* Per-stage emotional color shifts */
+.radio-box.stage-serious {
+    border-color: #3b82f6;
+    color: #93c5fd;
+    box-shadow: 0 6px 20px rgba(59,130,246,0.25);
+}
+.radio-box.stage-confused {
+    border-color: #a78bfa;
+    color: #c4b5fd;
+    box-shadow: 0 6px 20px rgba(167,139,250,0.3);
+}
+.radio-box.stage-exhausted {
+    border-color: #f59e0b;
+    color: #fcd34d;
+    box-shadow: 0 6px 20px rgba(245,158,11,0.35);
+}
+.radio-box.stage-existential {
+    border-color: #ef4444;
+    color: #fecaca;
+    box-shadow: 0 6px 20px rgba(239,68,68,0.4), 0 0 30px rgba(239,68,68,0.25);
+    animation: existential-pulse 2.4s ease-in-out infinite;
+}
+@keyframes existential-pulse {
+    0%, 100% { filter: hue-rotate(0deg); }
+    50%      { filter: hue-rotate(-6deg) brightness(1.05); }
+}
+
+/* Overlapping interjection */
+.radio-interjection {
+    margin-top: 6px;
+    padding: 4px 6px;
+    background: rgba(0,0,0,0.55);
+    border-left: 2px solid #fbbf24;
+    color: #fde68a;
+    font-size: 10px;
+    line-height: 1.3;
+    opacity: 0;
+    animation: inter-pop 0.3s ease-out forwards;
+    text-shadow: 0 0 4px currentColor;
+}
+@keyframes inter-pop {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 0.92; transform: translateY(0); }
 }
 
 .lane-btn {

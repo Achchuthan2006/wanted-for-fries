@@ -45,6 +45,60 @@ const LANES = [0.22, 0.5, 0.78]; // left, center, right (% of width)
 const MAX_HITS = 3;
 const OBSTACLE_TYPES = ["cone", "barrier", "civilian", "civilian"];
 
+
+// ---------- Radio Subtitle (typewriter + voice filter visual) ----------
+function RadioBox({ radio }) {
+    const { line, callsign, stage, interjection, nonce } = radio;
+    const [typed, setTyped] = useState("");
+    const [showInter, setShowInter] = useState(false);
+
+    useEffect(() => {
+        if (!line) return;
+        setTyped("");
+        setShowInter(false);
+        let i = 0;
+        const speed = 24; // ms per char
+        const tick = () => {
+            i += 1;
+            setTyped(line.slice(0, i));
+        };
+        const interval = setInterval(tick, speed);
+        const cap = setTimeout(() => clearInterval(interval), line.length * speed + 50);
+        const interT = interjection
+            ? setTimeout(() => setShowInter(true), Math.max(900, (line.length * speed) / 2))
+            : null;
+        const hideT = interjection
+            ? setTimeout(() => setShowInter(false), Math.max(900, (line.length * speed) / 2) + 1900)
+            : null;
+        return () => {
+            clearInterval(interval);
+            clearTimeout(cap);
+            if (interT) clearTimeout(interT);
+            if (hideT) clearTimeout(hideT);
+        };
+    }, [line, interjection, nonce]);
+
+    return (
+        <div className={`radio-box stage-${stage}`} data-testid="radio-box">
+            <div className="radio-box-header">
+                <span className="radio-led" aria-hidden />
+                <span className="radio-callsign">📻 {callsign}</span>
+                <span className="radio-stage">{stage}</span>
+            </div>
+            <div className="radio-static-overlay" aria-hidden />
+            <div className="radio-line">
+                {typed}
+                {typed.length < (line || "").length && <span className="radio-cursor">▮</span>}
+            </div>
+            {showInter && interjection && (
+                <div className="radio-interjection" data-testid="radio-interjection">
+                    <span className="radio-led-small" aria-hidden /> Air-1: <i>{interjection}</i>
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ---------- Animated Title Screen ----------
 function TitleScreen({ onStart }) {
     return (
@@ -408,7 +462,13 @@ export default function Game() {
     const [fries, setFries] = useState(0);
     const [hits, setHits] = useState(0);
     const [dodged, setDodged] = useState(0);
-    const [radio, setRadio] = useState(EARLY_INTRO_LINES[0]);
+    const [radio, setRadio] = useState({
+        line: EARLY_INTRO_LINES[0],
+        callsign: "Dispatch",
+        stage: "serious",
+        interjection: "",
+        nonce: 0,
+    });
     const [shellShake, setShellShake] = useState(false);
     const [flashes, setFlashes] = useState([]);
     const [pops, setPops] = useState([]);
@@ -466,7 +526,13 @@ export default function Game() {
         setSparkles([]);
         setSlowMo(false);
         slowMoRef.current = false;
-        setRadio(EARLY_INTRO_LINES[Math.floor(Math.random() * EARLY_INTRO_LINES.length)]);
+        setRadio({
+            line: EARLY_INTRO_LINES[Math.floor(Math.random() * EARLY_INTRO_LINES.length)],
+            callsign: "Dispatch",
+            stage: "serious",
+            interjection: "",
+            nonce: Date.now(),
+        });
         setScreen("playing");
     };
 
@@ -499,19 +565,33 @@ export default function Game() {
         }, 2000);
     }, []);
 
-    // Fetch radio line from backend
+    // Fetch radio line from backend with new 4-stage system
     const fetchRadio = useCallback(async () => {
         const s = stateRef.current;
-        const phase = s.distance < 400 ? "early" : s.distance < 1200 ? "mid" : "late";
+        // Distance-based stage selection (matches backend thresholds)
+        let phase;
+        if (s.distance < 350) phase = "serious";
+        else if (s.distance < 900) phase = "confused";
+        else if (s.distance < 1700) phase = "exhausted";
+        else phase = "existential";
         try {
             const res = await axios.post(`${API}/radio`, {
                 phase,
                 fries_collected: s.fries,
                 distance: s.distance,
             }, { timeout: 8000 });
-            if (res.data?.line) setRadio(res.data.line);
+            if (res.data?.line) {
+                sfx.radioStatic();
+                setRadio({
+                    line: res.data.line,
+                    callsign: res.data.callsign || "Unit-7",
+                    stage: res.data.stage || phase,
+                    interjection: res.data.interjection || "",
+                    nonce: Date.now() + Math.random(),
+                });
+            }
         } catch {
-            // backend already has fallback; if request fails entirely keep previous
+            // keep previous line silently
         }
     }, []);
 
@@ -900,10 +980,7 @@ export default function Game() {
                         </div>
                     </div>
 
-                    <div className="radio-box" data-testid="radio-box">
-                        <span className="label">📻 Police Radio</span>
-                        <div className="mt-1">{radio}</div>
-                    </div>
+                    <RadioBox radio={radio} />
 
                     {/* On-screen lane buttons */}
                     <div className="absolute bottom-6 left-0 right-0 z-30 flex justify-between px-6 pointer-events-none">
