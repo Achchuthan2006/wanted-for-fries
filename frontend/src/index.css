@@ -2345,3 +2345,460 @@ body {
     85%      { transform: translate(-1px, 1px) rotate(-0.2deg); }
 }
 
+
+/* ============================================ */
+/* ====== Caught Cinematic Sequence v2 ======== */
+/* ============================================ */
+
+.caught-night {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at 50% 70%, #1a0f2a 0%, #06030f 100%);
+    z-index: 1;
+}
+
+/* Police strobe perimeter */
+.caught-strobe {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 3;
+    mix-blend-mode: screen;
+    opacity: 0;
+    transition: opacity 0.4s;
+    background:
+        radial-gradient(ellipse 240px 280px at 8% 60%,  rgba(0,90,255,0.7), transparent 60%),
+        radial-gradient(ellipse 240px 280px at 92% 60%, rgba(255,30,60,0.7), transparent 60%),
+        radial-gradient(ellipse 280px 220px at 50% 90%, rgba(0,90,255,0.5), transparent 65%);
+    animation: caught-strobe 0.45s steps(2) infinite;
+}
+.caught-strobe.is-on { opacity: 1; }
+@keyframes caught-strobe {
+    0%, 49% { filter: hue-rotate(0deg); }
+    50%, 100% { filter: hue-rotate(160deg); }
+}
+
+/* Helicopter spotlight */
+.caught-spotlight {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 4;
+    opacity: 0;
+    transition: opacity 0.6s;
+    background:
+        radial-gradient(circle 110px at 50% 65%, rgba(255,250,210,0.85) 0%, rgba(255,250,210,0.4) 40%, transparent 80%);
+    mix-blend-mode: screen;
+}
+.caught-spotlight.is-on { opacity: 1; }
+.caught-spotlight-cone {
+    position: absolute;
+    left: 50%;
+    top: 6%;
+    width: 240px;
+    height: 70%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    z-index: 4;
+    opacity: 0;
+    transition: opacity 0.6s;
+    background: linear-gradient(180deg,
+        rgba(255,250,210,0.6) 0%,
+        rgba(255,250,210,0.18) 50%,
+        transparent 100%);
+    clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%);
+    filter: blur(6px);
+    mix-blend-mode: screen;
+    animation: spotlight-sway 2.6s ease-in-out infinite alternate;
+}
+.caught-spotlight-cone.is-on { opacity: 1; }
+@keyframes spotlight-sway {
+    from { transform: translateX(-50%) rotate(-3deg); }
+    to   { transform: translateX(-50%) rotate(3deg); }
+}
+
+/* Helicopter */
+.caught-chopper {
+    position: absolute;
+    top: 4%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 46px;
+    z-index: 6;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.7));
+    animation: caught-chopper-hover 1.2s ease-in-out infinite alternate;
+}
+@keyframes caught-chopper-hover {
+    from { transform: translateX(-50%) translateY(0)  rotate(-2deg); }
+    to   { transform: translateX(-50%) translateY(6px) rotate(2deg); }
+}
+
+/* Police perimeter cars */
+.caught-perim {
+    position: absolute;
+    width: 78px;
+    z-index: 5;
+    filter: drop-shadow(0 6px 14px rgba(0,0,0,0.6));
+}
+.caught-perim--lt {
+    left: 6%;
+    bottom: 26%;
+    transform: rotate(35deg) scaleX(-1);
+    animation: caught-perim-in-l 0.7s ease-out backwards;
+}
+.caught-perim--rt {
+    right: 6%;
+    bottom: 26%;
+    transform: rotate(-35deg);
+    animation: caught-perim-in-r 0.7s ease-out backwards;
+}
+.caught-perim--bk {
+    left: 50%;
+    bottom: 5%;
+    transform: translateX(-50%) rotate(0deg);
+    animation: caught-perim-in-b 0.6s ease-out backwards;
+}
+@keyframes caught-perim-in-l {
+    from { left: -100px; opacity: 0; }
+    to   { left: 6%;     opacity: 1; }
+}
+@keyframes caught-perim-in-r {
+    from { right: -100px; opacity: 0; }
+    to   { right: 6%;     opacity: 1; }
+}
+@keyframes caught-perim-in-b {
+    from { bottom: -120px; opacity: 0; }
+    to   { bottom: 5%;     opacity: 1; }
+}
+
+/* Angel's car (parked, slight tilt) */
+.caught-car {
+    position: absolute;
+    left: 50%;
+    bottom: 32%;
+    transform: translateX(-50%) rotate(-2deg);
+    width: 120px;
+    filter: drop-shadow(0 16px 18px rgba(0,0,0,0.6));
+    animation: caught-car-jiggle 1.6s ease-in-out infinite alternate;
+    z-index: 7;
+}
+.caught-car-img { width: 100%; display: block; }
+.caught-car.is-slowing { animation: caught-car-slow 2.2s ease-out forwards; }
+@keyframes caught-car-jiggle {
+    from { transform: translateX(-50%) rotate(-2deg) translateY(0); }
+    to   { transform: translateX(-50%) rotate(-2deg) translateY(-2px); }
+}
+@keyframes caught-car-slow {
+    0%   { transform: translateX(-50%) translateY(60px) rotate(-1deg); }
+    80%  { transform: translateX(-50%) translateY(-4px) rotate(-2.5deg); }
+    100% { transform: translateX(-50%) translateY(0)     rotate(-2deg); }
+}
+.caught-car-skid {
+    position: absolute;
+    bottom: -8px;
+    width: 6px;
+    height: 80px;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);
+    border-radius: 3px;
+    filter: blur(0.5px);
+    opacity: 0;
+    animation: caught-skid-fade 1.4s 0.3s ease-out forwards;
+}
+.caught-car-skid--l { left: 16px; transform: rotate(-3deg); }
+.caught-car-skid--r { right: 16px; transform: rotate(3deg); }
+@keyframes caught-skid-fade {
+    from { opacity: 0; height: 0; }
+    50%  { opacity: 0.85; height: 80px; }
+    to   { opacity: 0.4; height: 80px; }
+}
+
+/* Defensive fry + shield bubble */
+.caught-defensive {
+    position: absolute;
+    top: -38px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 8;
+    animation: caught-defensive-in 0.45s cubic-bezier(.34,1.56,.64,1);
+}
+.caught-defensive-fry {
+    font-size: 40px;
+    display: inline-block;
+    filter: drop-shadow(0 0 10px rgba(255,199,44,1));
+    animation: caught-fry-tremble 0.32s steps(2) infinite;
+    position: relative;
+    z-index: 2;
+}
+.caught-defensive-shield {
+    position: absolute;
+    top: -4px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    font-size: 60px;
+    opacity: 0.55;
+    animation: caught-shield-glow 1.4s ease-in-out infinite alternate;
+    z-index: 1;
+}
+@keyframes caught-defensive-in {
+    from { transform: translateX(-50%) scale(0.3); opacity: 0; }
+    to   { transform: translateX(-50%) scale(1);   opacity: 1; }
+}
+@keyframes caught-fry-tremble {
+    0%, 100% { transform: rotate(-6deg); }
+    50%      { transform: rotate(6deg); }
+}
+@keyframes caught-shield-glow {
+    from { opacity: 0.4; filter: drop-shadow(0 0 6px rgba(120,200,255,0.6)); }
+    to   { opacity: 0.7; filter: drop-shadow(0 0 14px rgba(120,200,255,1)); }
+}
+
+/* Officer */
+.caught-officer {
+    position: absolute;
+    right: -90px;
+    bottom: 22%;
+    font-size: 78px;
+    z-index: 9;
+    filter: drop-shadow(0 8px 10px rgba(0,0,0,0.7));
+    transition: right 2.6s cubic-bezier(.22,.61,.36,1);
+}
+.caught-officer.is-approaching { right: 28%; }
+.caught-officer.is-paused { right: 30%; }
+.caught-officer-emoji {
+    display: inline-block;
+    animation: caught-walk-bob 0.35s steps(2) infinite;
+}
+.caught-officer.is-paused .caught-officer-emoji {
+    animation: caught-disappointed 1.4s ease-in-out infinite alternate;
+}
+@keyframes caught-walk-bob {
+    0%, 100% { transform: translateY(0) rotate(-2deg); }
+    50%      { transform: translateY(-5px) rotate(2deg); }
+}
+@keyframes caught-disappointed {
+    from { transform: translateY(0); }
+    to   { transform: translateY(2px) scale(0.98); }
+}
+
+/* Awkward silence indicator */
+.caught-silence {
+    position: absolute;
+    top: 18%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    text-align: center;
+    pointer-events: none;
+}
+.caught-silence-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #fff;
+    margin: 0 6px;
+    opacity: 0;
+    animation: silence-dot 2.6s ease-in-out infinite;
+}
+.caught-silence-dot:nth-child(2) { animation-delay: 0.6s; }
+.caught-silence-dot:nth-child(3) { animation-delay: 1.2s; }
+@keyframes silence-dot {
+    0%, 90%, 100% { opacity: 0; transform: scale(0.6); }
+    30%, 60%      { opacity: 1; transform: scale(1.2); }
+}
+.caught-silence-label {
+    margin-top: 14px;
+    color: #888;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-style: italic;
+    animation: silence-fade 2.6s ease-in-out infinite;
+}
+@keyframes silence-fade {
+    0%, 100% { opacity: 0.4; }
+    50%      { opacity: 0.95; }
+}
+
+/* Officer speech bubble */
+.caught-speech {
+    position: absolute;
+    top: 14%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #FEF3C7;
+    color: #111827;
+    border: 3px solid #111827;
+    border-radius: 14px;
+    padding: 12px 14px;
+    max-width: 86%;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.65);
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    line-height: 1.35;
+    z-index: 12;
+    animation: caught-speech-in 0.35s ease-out;
+}
+.caught-speech p { margin: 0; }
+.caught-speech b { color: #DA291C; }
+.caught-speech-tail {
+    position: absolute;
+    right: 14%;
+    bottom: -12px;
+    width: 0; height: 0;
+    border: 12px solid transparent;
+    border-top-color: #111827;
+}
+.caught-speech-tail::after {
+    content: "";
+    position: absolute;
+    left: -9px;
+    top: -14px;
+    width: 0; height: 0;
+    border: 9px solid transparent;
+    border-top-color: #FEF3C7;
+}
+.caught-speech-eyebrow {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #DA291C;
+    margin-bottom: 4px;
+}
+@keyframes caught-speech-in {
+    from { transform: translateX(-50%) scale(0.6); opacity: 0; }
+    to   { transform: translateX(-50%) scale(1);   opacity: 1; }
+}
+
+/* Stage caption */
+.caught-caption {
+    position: absolute;
+    bottom: 52px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #FFC72C;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    text-align: center;
+    background: rgba(0,0,0,0.65);
+    padding: 5px 14px;
+    border-radius: 4px;
+    z-index: 11;
+    max-width: 90%;
+    border: 1px solid rgba(255,199,44,0.4);
+}
+
+/* Ticket printer */
+.caught-printer {
+    position: absolute;
+    left: 50%;
+    bottom: 18%;
+    transform: translateX(-50%);
+    z-index: 13;
+    width: 240px;
+    animation: printer-in 0.5s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes printer-in {
+    from { transform: translate(-50%, 30px) scale(0.7); opacity: 0; }
+    to   { transform: translate(-50%, 0)     scale(1);   opacity: 1; }
+}
+.caught-printer-machine {
+    width: 100%;
+    height: 70px;
+    background: linear-gradient(180deg, #1f2937 0%, #0a0e16 100%);
+    border-radius: 8px 8px 4px 4px;
+    border: 3px solid #0a0e16;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.7), inset 0 0 8px rgba(255,199,44,0.15);
+    position: relative;
+    overflow: hidden;
+}
+.caught-printer-slot {
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    bottom: 6px;
+    height: 6px;
+    background: #000;
+    border-radius: 3px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.9);
+}
+.caught-printer-light {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 8px #22c55e;
+    animation: printer-led 0.4s steps(2) infinite;
+}
+@keyframes printer-led {
+    0%, 49%  { opacity: 0.4; }
+    50%, 100%{ opacity: 1; }
+}
+.caught-printer-label {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    color: #FFC72C;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+}
+.caught-printer-paper {
+    width: 88%;
+    margin: 0 auto;
+    background: #fff8e7;
+    border-left: 2px dashed #9ca3af;
+    border-right: 2px dashed #9ca3af;
+    padding: 8px 10px 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: #1f2937;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.5);
+    max-height: 0;
+    overflow: hidden;
+    animation: printer-extrude 2.4s ease-out forwards;
+}
+@keyframes printer-extrude {
+    from { max-height: 0; }
+    to   { max-height: 220px; }
+}
+.caught-printer-line {
+    border-bottom: 1px dotted #9ca3af;
+    padding: 3px 0;
+    opacity: 0;
+    animation: printer-line-in 0.3s ease-out forwards;
+}
+.caught-printer-line:nth-child(1) { animation-delay: 0.2s; }
+.caught-printer-line:nth-child(2) { animation-delay: 0.6s; }
+.caught-printer-line:nth-child(3) { animation-delay: 1.0s; }
+.caught-printer-line:nth-child(4) { animation-delay: 1.4s; }
+.caught-printer-line:nth-child(5) { animation-delay: 1.8s; }
+.caught-printer-line:nth-child(6) { animation-delay: 2.2s; }
+@keyframes printer-line-in {
+    from { opacity: 0; transform: translateX(-4px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Ticket printed-paper feel */
+.ticket-printed {
+    background: #fff8e7;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 2px 0 rgba(0,0,0,0.25);
+    animation: ticket-drop 0.5s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes ticket-drop {
+    from { transform: translateY(-40px) rotate(-4deg); opacity: 0; }
+    to   { transform: translateY(0)     rotate(-2deg); opacity: 1; }
+}
+

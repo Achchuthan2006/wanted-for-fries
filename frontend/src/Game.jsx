@@ -390,74 +390,169 @@ function WorldPropView({ p, shellW }) {
     return null;
 }
 
-// ---------- Caught Cutscene ----------
+// ---------- Caught Cinematic Sequence ----------
+const CAUGHT_STEPS = [
+    { id: "slowdown",  duration: 2200 },
+    { id: "surround",  duration: 2400 },
+    { id: "spotlight", duration: 1900 },
+    { id: "approach",  duration: 2800 },
+    { id: "defensive", duration: 1800 },
+    { id: "silence",   duration: 2600 },
+    { id: "speech",    duration: 3600 },
+    { id: "printer",   duration: 2800 },
+];
+
 function CaughtCutscene({ onDone }) {
-    const [step, setStep] = useState(0); // 0: officer walking, 1: pause, 2: speech, 3: fade
+    const [step, setStep] = useState(0);
+    const [skipping, setSkipping] = useState(false);
+
     useEffect(() => {
-        const t1 = setTimeout(() => setStep(1), 1100); // arrived
-        const t2 = setTimeout(() => setStep(2), 1700); // speak
-        const t3 = setTimeout(() => setStep(3), 5200); // fade
-        const t4 = setTimeout(() => onDone(), 5900);
-        return () => [t1, t2, t3, t4].forEach(clearTimeout);
-    }, [onDone]);
+        if (step >= CAUGHT_STEPS.length) {
+            const f = setTimeout(onDone, 500);
+            return () => clearTimeout(f);
+        }
+        const id = CAUGHT_STEPS[step].id;
+        if (id === "surround") sfx.siren();
+        if (id === "spotlight") sfx.bassDrop();
+        if (id === "approach") {
+            const m = getMusic();
+            if (m) m.startHeartbeat();
+        }
+        if (id === "silence") {
+            const m = getMusic();
+            if (m) m.stopHeartbeat();
+        }
+        if (id === "printer") sfx.radioStatic();
+        const t = setTimeout(() => setStep((s) => s + 1), CAUGHT_STEPS[step].duration);
+        return () => clearTimeout(t);
+    }, [step, onDone]);
+
+    const skip = () => {
+        setSkipping(true);
+        const m = getMusic();
+        if (m) m.stopHeartbeat();
+        setTimeout(onDone, 350);
+    };
+
+    const active  = (id) => CAUGHT_STEPS[Math.min(step, CAUGHT_STEPS.length - 1)].id === id;
+    const reached = (id) => step >= CAUGHT_STEPS.findIndex((s) => s.id === id);
 
     return (
         <div
             data-testid="caught-cutscene"
-            className={`absolute inset-0 z-50 overflow-hidden bg-gradient-to-b from-slate-900 via-slate-800 to-slate-950 ${step >= 3 ? "cutscene-fade" : ""}`}
+            className={`absolute inset-0 z-50 overflow-hidden bg-black ${skipping ? "cine-exit" : ""}`}
         >
-            {/* spotlight on Angel's car */}
-            <div className="cutscene-spotlight" />
+            <div className="cine-bar cine-bar--top" />
+            <div className="cine-bar cine-bar--bot" />
 
-            {/* Red/blue strobes from off-screen police car */}
-            <div className="cutscene-strobe" />
+            <div className="caught-night" />
+            <div className={`caught-strobe ${reached("surround") ? "is-on" : ""}`} />
+            <div className={`caught-spotlight ${reached("spotlight") ? "is-on" : ""}`} />
+            <div className={`caught-spotlight-cone ${reached("spotlight") ? "is-on" : ""}`} />
 
-            {/* Angel's car parked */}
-            <div className="cutscene-car">
-                <img
-                    src={IMG.player}
-                    alt="Angel's car"
-                    className="cutscene-car-img"
-                    draggable={false}
-                />
-                {/* Angel's hand holding one last fry */}
-                <div className="cutscene-fry" aria-hidden>🍟</div>
+            {reached("spotlight") && (
+                <div className="caught-chopper" data-testid="caught-chopper">🚁</div>
+            )}
+
+            {reached("surround") && (
+                <>
+                    <img src={IMG.police} alt="" className="caught-perim caught-perim--lt" />
+                    <img src={IMG.police} alt="" className="caught-perim caught-perim--rt" />
+                    <img src={IMG.police} alt="" className="caught-perim caught-perim--bk" />
+                </>
+            )}
+
+            <div className={`caught-car ${active("slowdown") ? "is-slowing" : ""}`}>
+                <img src={IMG.player} alt="Angel's car" className="caught-car-img" draggable={false} />
+                <div className="caught-car-skid caught-car-skid--l" />
+                <div className="caught-car-skid caught-car-skid--r" />
+                {reached("defensive") && (
+                    <div className="caught-defensive">
+                        <span className="caught-defensive-fry">🍟</span>
+                        <span className="caught-defensive-shield">🛡️</span>
+                    </div>
+                )}
             </div>
 
-            {/* Officer walking up */}
-            <div className={`cutscene-officer ${step >= 1 ? "is-arrived" : ""}`} data-testid="cutscene-officer">
-                <span className="cutscene-officer-emoji">👮‍♀️</span>
-            </div>
-
-            {/* Speech bubble */}
-            {step >= 2 && (
-                <div className="cutscene-speech" data-testid="cutscene-speech">
-                    <div className="cutscene-speech-tail" />
-                    <div className="cutscene-speech-eyebrow">Officer Mendez</div>
-                    <p>
-                        “Ma'am… you caused a <b>14 car pileup</b> for potatoes.”
-                    </p>
+            {reached("spotlight") && (
+                <div
+                    className={`caught-officer ${reached("approach") ? "is-approaching" : ""} ${reached("defensive") ? "is-paused" : ""}`}
+                    data-testid="cutscene-officer"
+                >
+                    <span className="caught-officer-emoji">👮‍♀️</span>
                 </div>
             )}
 
-            {/* Bottom caption */}
-            <div className="cutscene-caption">
-                <span>SCENE — Roadside, 11:47 PM</span>
+            {active("silence") && (
+                <div className="caught-silence" data-testid="caught-silence">
+                    <span className="caught-silence-dot" />
+                    <span className="caught-silence-dot" />
+                    <span className="caught-silence-dot" />
+                    <div className="caught-silence-label">— awkward silence —</div>
+                </div>
+            )}
+
+            {reached("speech") && !reached("printer") && (
+                <div className="caught-speech" data-testid="cutscene-speech">
+                    <div className="caught-speech-eyebrow">Officer Mendez</div>
+                    <p>"Ma'am… you caused a <b>14 car pileup</b> for potatoes."</p>
+                    <div className="caught-speech-tail" />
+                </div>
+            )}
+
+            {reached("printer") && (
+                <div className="caught-printer" data-testid="caught-printer">
+                    <div className="caught-printer-machine">
+                        <div className="caught-printer-slot" />
+                        <div className="caught-printer-light" />
+                        <span className="caught-printer-label">CITY POLICE</span>
+                    </div>
+                    <div className="caught-printer-paper">
+                        <div className="caught-printer-line">⚖️ CITATION ISSUED</div>
+                        <div className="caught-printer-line">Charge 1: Stunt Driving</div>
+                        <div className="caught-printer-line">Charge 2: Potato Endangerment</div>
+                        <div className="caught-printer-line">Charge 3: Fry Recovery</div>
+                        <div className="caught-printer-line">Charge 4: Emotional Attachment</div>
+                        <div className="caught-printer-line">— continued —</div>
+                    </div>
+                </div>
+            )}
+
+            <div className="caught-caption">
+                {active("slowdown") && "Engine cuts. The car coasts to a halt..."}
+                {active("surround") && "Three units close in. No way out."}
+                {active("spotlight") && "Air-1 overhead. Spotlight engaged."}
+                {active("approach") && "An officer approaches. Slowly."}
+                {active("defensive") && "Angel clutches the last fry."}
+                {active("silence") && " "}
+                {active("speech") && "Officer Mendez breaks the silence."}
+                {active("printer") && "Issuing citation..."}
             </div>
+
+            <div className="cine-progress">
+                {CAUGHT_STEPS.map((p, i) => (
+                    <span key={p.id} className={`cine-dot ${i <= step ? "is-on" : ""}`} />
+                ))}
+            </div>
+            <button className="cine-skip" onClick={skip} aria-label="Skip">Skip ▸</button>
         </div>
     );
 }
 
 // ---------- Ticket Game Over ----------
-function GameOverTicket({ distance, fries, dodged, onRestart, onTitle }) {
+function GameOverTicket({ distance, fries, dodged, onRestart, onTitle, onReplay }) {
     const [showSecret, setShowSecret] = useState(false);
     useEffect(() => {
         const t = setTimeout(() => setShowSecret(true), 1300);
         return () => clearTimeout(t);
     }, []);
+
+    const trafficLawsViolated = 3 + Math.floor(distance / 70);
+    const propertyDamage = (distance * 47 + fries * 200 + 1437).toLocaleString();
+
     return (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center p-6 bg-black/80 backdrop-blur-sm overflow-y-auto py-6">
-            <div className="ticket" data-testid="ticket-modal">
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto py-6">
+            <div className="ticket ticket-printed" data-testid="ticket-modal">
                 <div className="flex justify-center mb-2">
                     <span className="badge">CITY POLICE • CITATION</span>
                 </div>
@@ -469,14 +564,16 @@ function GameOverTicket({ distance, fries, dodged, onRestart, onTitle }) {
                 <div className="ticket-section-label">CHARGES</div>
                 <ul className="ticket-charges" data-testid="ticket-charges">
                     <li>Stunt Driving</li>
-                    <li>Dangerous Fry Recovery</li>
                     <li>Vehicular Potato Endangerment</li>
+                    <li>Dangerous Fry Recovery</li>
                     <li>Excessive Emotional Attachment to Fries</li>
                 </ul>
 
                 <div className="ticket-section-label">FINAL STATS</div>
                 <div className="row"><span>Fries Saved</span><b data-testid="ticket-fries">{fries} 🍟</b></div>
                 <div className="row"><span>Distance Escaped</span><b data-testid="ticket-distance">{distance} m</b></div>
+                <div className="row"><span>Traffic Laws Violated</span><b data-testid="ticket-laws">{trafficLawsViolated}</b></div>
+                <div className="row"><span>Property Damage</span><b data-testid="ticket-damage">${propertyDamage}</b></div>
                 <div className="row"><span>Police Cars Dodged</span><b data-testid="ticket-dodged">{dodged}</b></div>
                 <div className="row"><span>Lessons Learned</span><b data-testid="ticket-lessons">0</b></div>
 
@@ -485,21 +582,26 @@ function GameOverTicket({ distance, fries, dodged, onRestart, onTitle }) {
                 </div>
             </div>
 
-            <div className="flex gap-3 mt-7">
+            <div className="flex flex-col items-center gap-2 mt-6">
                 <button data-testid="restart-button" className="btn-arcade text-lg" onClick={onRestart}>
-                    Try Again
+                    🍟 One More Fry
                 </button>
-                <button data-testid="title-button" className="btn-arcade-secondary text-sm" onClick={onTitle}>
-                    Main Menu
-                </button>
+                <div className="flex gap-3">
+                    {onReplay && (
+                        <button data-testid="replay-button" className="btn-arcade-secondary text-sm" onClick={onReplay}>
+                            🎬 Replay Scene
+                        </button>
+                    )}
+                    <button data-testid="title-button" className="btn-arcade-secondary text-sm" onClick={onTitle}>
+                        Main Menu
+                    </button>
+                </div>
             </div>
 
             {showSecret && (
                 <div className="secret-ending" data-testid="secret-ending">
                     <span className="secret-sparkle" aria-hidden>✨🍟✨</span>
-                    <p>
-                        Made for <b>Angel</b>, the original stunt driver.
-                    </p>
+                    <p>Made for <b>Angel</b>, the original stunt driver.</p>
                     <span className="secret-heart" aria-hidden>♥</span>
                 </div>
             )}
@@ -1494,6 +1596,7 @@ export default function Game() {
                     dodged={dodged}
                     onRestart={startGame}
                     onTitle={() => setScreen("title")}
+                    onReplay={() => setScreen("caught")}
                 />
             )}
         </div>
