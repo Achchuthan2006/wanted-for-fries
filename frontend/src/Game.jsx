@@ -337,6 +337,59 @@ function CutscenePanel({ active, id, children }) {
     );
 }
 
+// ---------- World prop renderer (scrolling ambient sprites) ----------
+function WorldPropView({ p, shellW }) {
+    if (p.kind === "bus") {
+        // bus crosses horizontally
+        return (
+            <div className="prop-bus" style={{ top: p.y }} data-testid="prop-bus">
+                <span className="prop-bus-emoji">🚌</span>
+                <span className="prop-bus-trail" aria-hidden />
+            </div>
+        );
+    }
+    // Side props (left or right edges)
+    const sideStyle = p.side === "left"
+        ? { left: 4, top: p.y }
+        : { right: 4, top: p.y };
+    if (p.kind === "billboard") {
+        return (
+            <div className={`prop-billboard prop-side-${p.side}`} style={sideStyle}>
+                <div className="prop-billboard-pole" />
+                <div className="prop-billboard-board">
+                    <div className="prop-billboard-frame">
+                        <span>{p.content}</span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+    if (p.kind === "neon") {
+        return (
+            <div className={`prop-neon prop-side-${p.side}`} style={sideStyle}>
+                <span>{p.content}</span>
+            </div>
+        );
+    }
+    if (p.kind === "pedestrian") {
+        return (
+            <div className={`prop-pedestrian prop-side-${p.side}`} style={sideStyle}>
+                <span className="prop-ped-emoji">{p.content}</span>
+                <span className="prop-ped-reaction" aria-hidden>❗</span>
+            </div>
+        );
+    }
+    if (p.kind === "streetlight") {
+        return (
+            <div className={`prop-streetlight prop-side-${p.side}`} style={sideStyle}>
+                <div className="prop-streetlight-pole" />
+                <div className="prop-streetlight-glow" />
+            </div>
+        );
+    }
+    return null;
+}
+
 // ---------- Caught Cutscene ----------
 function CaughtCutscene({ onDone }) {
     const [step, setStep] = useState(0); // 0: officer walking, 1: pause, 2: speech, 3: fade
@@ -485,6 +538,21 @@ export default function Game() {
     const [turbo, setTurbo] = useState(false);
     const [policePanic, setPolicePanic] = useState(false);
     const [trail, setTrail] = useState([]); // {id, x, y, color}
+
+    // World + weather + events
+    const [weather, setWeather] = useState("sunny"); // sunny | sunset | night | rain
+    const [worldProps, setWorldProps] = useState([]); // ambient props that scroll {id, kind, side, y, content}
+    const [eventBanner, setEventBanner] = useState(null); // {id, text, kind}
+    const [chopper, setChopper] = useState(false);
+    const weatherRef = useRef("sunny");
+    const worldTimerRef = useRef(0);
+    const eventTimerRef = useRef(0);
+    const billboardJokesRef = useRef([
+        "EAT FRESH FRIES", "1-800-LOST-FRY", "UNSALTED LIFE",
+        "POTATO POWER!", "FRY GUYS LEGAL", "NO FRY LEFT BEHIND",
+        "WANTED: 1 FRY", "BIG MAC, BIGGER DRAMA", "DRIVE THRU. LITERALLY.",
+        "FRIES > FAME", "GRAND THEFT POTATO", "LIVE LAUGH LARGE FRY",
+    ]);
     const comboRef = useRef(0);
     const comboTimerRef = useRef(0); // ms remaining before combo resets
     const frenzyRef = useRef(false);
@@ -554,6 +622,15 @@ export default function Game() {
         turboEndAtRef.current = 0;
         setPolicePanic(false);
         setTrail([]);
+        // World resets
+        setWeather("sunny");
+        weatherRef.current = "sunny";
+        setWorldProps([]);
+        setEventBanner(null);
+        setChopper(false);
+        worldTimerRef.current = 0;
+        // Pre-charge event timer so the FIRST event fires around 6-7s into play
+        eventTimerRef.current = 6000;
         setRadio({
             line: EARLY_INTRO_LINES[Math.floor(Math.random() * EARLY_INTRO_LINES.length)],
             callsign: "Dispatch",
@@ -726,6 +803,14 @@ export default function Game() {
             }, kind === "frenzy" ? 1400 : 900);
         };
 
+        const showEventBanner = (text) => {
+            const id = Date.now() + Math.random();
+            setEventBanner({ id, text });
+            setTimeout(() => {
+                setEventBanner((b) => (b && b.id === id ? null : b));
+            }, 2400);
+        };
+
         const startFrenzy = () => {
             frenzyRef.current = true;
             setFrenzy(true);
@@ -851,6 +936,112 @@ export default function Game() {
                 }
             }
 
+            // Weather progression by distance
+            const wantWeather =
+                s.distance < 350  ? "sunny" :
+                s.distance < 900  ? "sunset" :
+                s.distance < 1700 ? "night" :
+                                    "rain";
+            if (wantWeather !== weatherRef.current) {
+                weatherRef.current = wantWeather;
+                setWeather(wantWeather);
+            }
+
+            // Ambient world props (billboards, pedestrians, neon signs, helicopter)
+            worldTimerRef.current += dt;
+            if (worldTimerRef.current > 950) {
+                worldTimerRef.current = 0;
+                const r = Math.random();
+                let kind, side, content;
+                if (r < 0.30) {
+                    kind = "billboard";
+                    side = Math.random() < 0.5 ? "left" : "right";
+                    content = billboardJokesRef.current[
+                        Math.floor(Math.random() * billboardJokesRef.current.length)
+                    ];
+                } else if (r < 0.55) {
+                    kind = "neon";
+                    side = Math.random() < 0.5 ? "left" : "right";
+                    const neons = ["DINER", "OPEN", "PIZZA", "BAR", "24/7", "BURGERS", "TACOS"];
+                    content = neons[Math.floor(Math.random() * neons.length)];
+                } else if (r < 0.85) {
+                    kind = "pedestrian";
+                    side = Math.random() < 0.5 ? "left" : "right";
+                    const peds = ["🚶", "🧍", "🚶‍♀️", "🧍‍♂️", "👨‍🍳"];
+                    content = peds[Math.floor(Math.random() * peds.length)];
+                } else {
+                    kind = "streetlight";
+                    side = Math.random() < 0.5 ? "left" : "right";
+                    content = "";
+                }
+                const pid = Math.random().toString(36).slice(2);
+                setWorldProps((arr) => [
+                    ...arr.slice(-9),
+                    { id: pid, kind, side, y: -80, content },
+                ]);
+            }
+            // Move world props down and prune
+            setWorldProps((arr) => {
+                if (!arr.length) return arr;
+                const updated = arr.map((p) => ({ ...p, y: p.y + dy * 0.95 }))
+                                   .filter((p) => p.y < height + 100);
+                return updated;
+            });
+
+            // Random world events ~every 12s after first 8s
+            eventTimerRef.current += dt;
+            if (eventTimerRef.current > 12000 && s.distance > 60) {
+                eventTimerRef.current = 0;
+                const which = Math.random();
+                if (which < 0.30) {
+                    // FOOD TRUCK EXPLOSION — spawn extra fries in all lanes
+                    showEventBanner("🚚💥 FOOD TRUCK EXPLOSION!");
+                    for (let li = 0; li < 3; li++) {
+                        for (let k = 0; k < 3; k++) {
+                            entitiesRef.current.push({
+                                id: Math.random().toString(36).slice(2),
+                                type: "fry",
+                                laneIdx: li,
+                                y: -200 - k * 80 - li * 25,
+                                x: LANES[li] * width,
+                            });
+                        }
+                    }
+                } else if (which < 0.55) {
+                    // NEWS HELICOPTER overhead for ~7s
+                    showEventBanner("📺 LIVE: CHANNEL 9 ON SCENE!");
+                    setChopper(true);
+                    setTimeout(() => setChopper(false), 7000);
+                } else if (which < 0.78) {
+                    // CROSSING BUS — big visual element across the road
+                    const busId = Math.random().toString(36).slice(2);
+                    setWorldProps((arr) => [
+                        ...arr,
+                        { id: busId, kind: "bus", side: "cross", y: -60, content: "🚌" },
+                    ]);
+                    showEventBanner("🚌 BUS CROSSING!");
+                } else {
+                    // CONSTRUCTION ZONE — burst of cones + barriers
+                    showEventBanner("🚧 CONSTRUCTION ZONE!");
+                    const layout = [
+                        { lane: 0, type: "cone",    y: -100 },
+                        { lane: 2, type: "cone",    y: -200 },
+                        { lane: 1, type: "barrier", y: -340 },
+                        { lane: 0, type: "barrier", y: -500 },
+                        { lane: 2, type: "cone",    y: -640 },
+                    ];
+                    layout.forEach((it) => {
+                        entitiesRef.current.push({
+                            id: Math.random().toString(36).slice(2),
+                            type: it.type,
+                            laneIdx: it.lane,
+                            y: it.y,
+                            x: LANES[it.lane] * width,
+                        });
+                    });
+                }
+            }
+
             // Frenzy / turbo expiry
             if (frenzyRef.current && performance.now() >= frenzyEndAtRef.current) {
                 frenzyRef.current = false;
@@ -971,10 +1162,42 @@ export default function Game() {
     const playerX = LANES[lane] * shellWidth;
 
     return (
-        <div ref={shellRef} className={`game-shell ${shellShake ? "shake" : ""} ${slowMo ? "slow-mo" : ""} ${frenzy ? "frenzy" : ""} ${turbo ? "turbo" : ""}`} data-testid="game-shell">
+        <div ref={shellRef} className={`game-shell weather-${weather} ${shellShake ? "shake" : ""} ${slowMo ? "slow-mo" : ""} ${frenzy ? "frenzy" : ""} ${turbo ? "turbo" : ""}`} data-testid="game-shell">
             {/* Road */}
             <div ref={roadRef} className="road" data-testid="road" />
+
+            {/* Weather lighting overlays */}
+            <div className={`weather-tint weather-tint--${weather}`} aria-hidden />
+            {weather === "rain" && (
+                <>
+                    <div className="rain-layer" aria-hidden>
+                        {Array.from({ length: 28 }).map((_, i) => (
+                            <span key={i} className="rain-drop" style={{
+                                left: `${(i * 137) % 100}%`,
+                                animationDelay: `${(i * 0.07) % 1.2}s`,
+                                animationDuration: `${0.5 + (i % 5) * 0.08}s`,
+                            }} />
+                        ))}
+                    </div>
+                    <div className="wet-road" aria-hidden />
+                </>
+            )}
             <div className="siren" />
+
+            {/* Ambient world props (billboards, neon, pedestrians, buses, streetlights) */}
+            {screen === "playing" && worldProps.map((p) => (
+                <WorldPropView key={p.id} p={p} shellW={shellWidth} />
+            ))}
+
+            {/* News helicopter overhead */}
+            {screen === "playing" && chopper && (
+                <div className="news-chopper" data-testid="news-chopper">
+                    <div className="news-chopper-emoji">🚁</div>
+                    <div className="news-chopper-label">
+                        <span className="news-live">🔴 LIVE</span> Ch.9 — FRY-CHASE 24/7
+                    </div>
+                </div>
+            )}
 
             {/* Entities */}
             {screen === "playing" && entitiesRef.current.map((e) => {
@@ -1139,6 +1362,13 @@ export default function Game() {
 
             {/* Flash effects */}
             {flashes.map((id) => <div key={id} className="flash-red" />)}
+
+            {/* Event banner */}
+            {eventBanner && (
+                <div className="event-banner" data-testid="event-banner">
+                    {eventBanner.text}
+                </div>
+            )}
 
             {/* Combo banner */}
             {comboBanner && (

@@ -1893,3 +1893,341 @@ body {
     to   { transform: translateX(-50%) scale(1);   opacity: 1; }
 }
 
+
+/* ============================================ */
+/* ===== Vibrant City Environment Layer ======= */
+/* ============================================ */
+
+/* Weather tint overlays (sit between road and entities) */
+.weather-tint {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    mix-blend-mode: multiply;
+    transition: opacity 1s, background 1s;
+}
+.weather-tint--sunny    { background: rgba(255,235,180,0.0); }
+.weather-tint--sunset   {
+    background:
+        linear-gradient(180deg, rgba(255,120,90,0.25) 0%, rgba(255,180,90,0.18) 60%, rgba(20,20,40,0.05) 100%);
+}
+.weather-tint--night    {
+    background:
+        linear-gradient(180deg, rgba(10,8,30,0.65) 0%, rgba(10,8,30,0.55) 60%, rgba(20,15,40,0.65) 100%);
+}
+.weather-tint--rain     {
+    background:
+        linear-gradient(180deg, rgba(20,30,55,0.55) 0%, rgba(15,20,35,0.65) 100%);
+}
+
+/* Rain particles */
+.rain-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+    overflow: hidden;
+}
+.rain-drop {
+    position: absolute;
+    top: -20px;
+    width: 2px;
+    height: 18px;
+    background: linear-gradient(180deg, rgba(180,210,255,0) 0%, rgba(180,210,255,0.8) 100%);
+    border-radius: 2px;
+    animation: rain-fall linear infinite;
+    filter: blur(0.4px);
+    opacity: 0.7;
+}
+@keyframes rain-fall {
+    from { transform: translateY(-30px) translateX(0); }
+    to   { transform: translateY(110vh)  translateX(-12px); }
+}
+
+/* Wet road reflection (rain mode only) */
+.wet-road {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 4;
+    background:
+        linear-gradient(180deg,
+            transparent 0%,
+            rgba(120,160,220,0.18) 60%,
+            rgba(120,160,220,0.32) 100%),
+        repeating-linear-gradient(90deg,
+            transparent 0 30px,
+            rgba(255,255,255,0.04) 30px 32px,
+            transparent 32px 90px);
+    mix-blend-mode: screen;
+    animation: wet-shimmer 2.4s ease-in-out infinite alternate;
+}
+@keyframes wet-shimmer {
+    from { opacity: 0.8; }
+    to   { opacity: 1; }
+}
+
+/* Night-mode: police siren glow becomes more prominent */
+.weather-night .siren { opacity: 1.1; }
+.weather-rain  .siren { opacity: 1.2; filter: blur(0.6px) saturate(1.3); }
+
+/* === Side world props === */
+.prop-side-left, .prop-side-right {
+    position: absolute;
+    z-index: 5;
+    pointer-events: none;
+}
+
+/* Billboards */
+.prop-billboard {
+    width: 84px;
+    height: 90px;
+    transform: translateY(-50%);
+}
+.prop-billboard-pole {
+    position: absolute;
+    left: 50%;
+    top: 60%;
+    width: 5px;
+    height: 50px;
+    background: #6b7280;
+    border-radius: 2px;
+    transform: translateX(-50%);
+}
+.prop-billboard-board {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 56px;
+    background: #fff;
+    border: 3px solid #1f2937;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5), inset 0 0 0 2px #FFC72C;
+}
+.prop-billboard-frame {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #FFC72C 0%, #ffd95a 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+}
+.prop-billboard-frame span {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 900;
+    font-size: 8.5px;
+    color: #DA291C;
+    text-transform: uppercase;
+    text-align: center;
+    line-height: 1.05;
+    letter-spacing: 0.04em;
+    text-shadow: 0 1px 0 rgba(0,0,0,0.15);
+}
+.prop-billboard.prop-side-right .prop-billboard-frame {
+    background: linear-gradient(135deg, #DA291C 0%, #ff6b5b 100%);
+}
+.prop-billboard.prop-side-right .prop-billboard-frame span { color: #FFC72C; }
+
+/* Neon signs */
+.prop-neon {
+    width: 60px;
+    padding: 6px 8px;
+    background: rgba(0,0,0,0.7);
+    border: 1.5px solid currentColor;
+    border-radius: 6px;
+    color: #ff5fc1;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 900;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-align: center;
+    text-transform: uppercase;
+    text-shadow:
+        0 0 4px currentColor,
+        0 0 10px currentColor;
+    box-shadow:
+        0 0 8px currentColor,
+        inset 0 0 6px currentColor;
+    animation: neon-flicker 2s steps(8) infinite;
+}
+.prop-neon.prop-side-left  { color: #66d9ef; }
+.prop-neon.prop-side-right { color: #ff5fc1; }
+@keyframes neon-flicker {
+    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+    20%, 22%, 24%, 55% { opacity: 0.45; }
+}
+
+/* Pedestrians */
+.prop-pedestrian {
+    width: 32px;
+    font-size: 24px;
+    text-align: center;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));
+}
+.prop-ped-emoji {
+    display: inline-block;
+    animation: ped-bob 0.6s ease-in-out infinite alternate;
+}
+@keyframes ped-bob {
+    from { transform: translateY(0); }
+    to   { transform: translateY(-3px); }
+}
+.prop-ped-reaction {
+    position: absolute;
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #FFC72C;
+    font-weight: 900;
+    font-size: 16px;
+    text-shadow: 0 0 4px #DA291C;
+    animation: ped-react 1.2s ease-in-out infinite;
+}
+@keyframes ped-react {
+    0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0; }
+    50%      { transform: translateX(-50%) translateY(-4px); opacity: 1; }
+}
+
+/* Street lights */
+.prop-streetlight {
+    width: 26px;
+    height: 110px;
+}
+.prop-streetlight-pole {
+    position: absolute;
+    left: 50%;
+    top: 22px;
+    width: 4px;
+    height: 88px;
+    background: #4b5563;
+    transform: translateX(-50%);
+    border-radius: 2px;
+}
+.prop-streetlight-glow {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 26px;
+    height: 26px;
+    transform: translateX(-50%);
+    background: radial-gradient(circle, #fff5a3 10%, rgba(255,245,163,0.4) 50%, transparent 75%);
+    border-radius: 50%;
+    box-shadow: 0 0 28px rgba(255,245,163,0.8);
+}
+.weather-day  .prop-streetlight-glow { opacity: 0; }
+.weather-night .prop-streetlight-glow,
+.weather-rain  .prop-streetlight-glow { opacity: 1; }
+
+/* Crossing bus */
+.prop-bus {
+    position: absolute;
+    left: -120px;
+    width: 200px;
+    height: 70px;
+    z-index: 6;
+    pointer-events: none;
+    animation: bus-cross 1.8s ease-in-out forwards;
+}
+.prop-bus-emoji {
+    font-size: 64px;
+    filter: drop-shadow(0 8px 14px rgba(0,0,0,0.55));
+    display: inline-block;
+    transform: scaleX(2.2) scaleY(1.4);
+}
+.prop-bus-trail {
+    position: absolute;
+    left: -160px;
+    top: 36px;
+    width: 200px;
+    height: 6px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4));
+    border-radius: 3px;
+    filter: blur(2px);
+}
+@keyframes bus-cross {
+    0%   { left: -200px; }
+    100% { left: 100%; }
+}
+
+/* News helicopter */
+.news-chopper {
+    position: absolute;
+    top: 40px;
+    right: 4px;
+    z-index: 36;
+    pointer-events: none;
+    text-align: center;
+    animation: chopper-hover 1.2s ease-in-out infinite alternate;
+}
+.news-chopper-emoji {
+    font-size: 42px;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+    animation: chopper-rotor 0.16s linear infinite;
+}
+@keyframes chopper-rotor {
+    from { transform: rotate(-2deg); }
+    to   { transform: rotate(2deg); }
+}
+@keyframes chopper-hover {
+    from { transform: translateY(0); }
+    to   { transform: translateY(6px); }
+}
+.news-chopper-label {
+    margin-top: 2px;
+    background: rgba(0,0,0,0.85);
+    color: #fff;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 3px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border: 1px solid #DA291C;
+    white-space: nowrap;
+}
+.news-live {
+    color: #ef4444;
+    font-weight: 900;
+    margin-right: 3px;
+}
+
+/* Event banner (top center) */
+.event-banner {
+    position: absolute;
+    top: 14%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.85);
+    color: #FFC72C;
+    border: 2px solid #FFC72C;
+    border-radius: 10px;
+    padding: 8px 18px;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 900;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    text-shadow: 0 2px 0 #DA291C;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5), 0 0 30px rgba(255,199,44,0.4);
+    z-index: 44;
+    pointer-events: none;
+    animation: event-banner-pop 0.5s cubic-bezier(.34,1.56,.64,1),
+               event-banner-out 0.4s ease-in 2s forwards;
+    white-space: nowrap;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+@keyframes event-banner-pop {
+    from { transform: translate(-50%, -16px) scale(0.4); opacity: 0; }
+    to   { transform: translate(-50%, 0) scale(1);       opacity: 1; }
+}
+@keyframes event-banner-out {
+    to { transform: translate(-50%, -16px) scale(0.9); opacity: 0; }
+}
+
