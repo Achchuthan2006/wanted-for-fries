@@ -478,6 +478,21 @@ export default function Game() {
     const [slowMo, setSlowMo] = useState(false);
     const slowMoRef = useRef(false);
 
+    // Combo / Frenzy / Turbo
+    const [combo, setCombo] = useState(0);
+    const [comboBanner, setComboBanner] = useState(null); // {id, text, kind}
+    const [frenzy, setFrenzy] = useState(false);
+    const [turbo, setTurbo] = useState(false);
+    const [policePanic, setPolicePanic] = useState(false);
+    const [trail, setTrail] = useState([]); // {id, x, y, color}
+    const comboRef = useRef(0);
+    const comboTimerRef = useRef(0); // ms remaining before combo resets
+    const frenzyRef = useRef(false);
+    const turboRef = useRef(false);
+    const frenzyEndAtRef = useRef(0);
+    const turboEndAtRef = useRef(0);
+    const lastTrailRef = useRef(0);
+
     const shellRef = useRef(null);
     const roadRef = useRef(null);
     const entitiesRef = useRef([]);
@@ -526,6 +541,19 @@ export default function Game() {
         setSparkles([]);
         setSlowMo(false);
         slowMoRef.current = false;
+        // Combo / frenzy / turbo resets
+        setCombo(0);
+        comboRef.current = 0;
+        comboTimerRef.current = 0;
+        setComboBanner(null);
+        setFrenzy(false);
+        frenzyRef.current = false;
+        frenzyEndAtRef.current = 0;
+        setTurbo(false);
+        turboRef.current = false;
+        turboEndAtRef.current = 0;
+        setPolicePanic(false);
+        setTrail([]);
         setRadio({
             line: EARLY_INTRO_LINES[Math.floor(Math.random() * EARLY_INTRO_LINES.length)],
             callsign: "Dispatch",
@@ -690,15 +718,50 @@ export default function Game() {
             }, golden ? 900 : 650);
         };
 
+        const showComboBanner = (text, kind = "combo") => {
+            const id = Date.now() + Math.random();
+            setComboBanner({ id, text, kind });
+            setTimeout(() => {
+                setComboBanner((b) => (b && b.id === id ? null : b));
+            }, kind === "frenzy" ? 1400 : 900);
+        };
+
+        const startFrenzy = () => {
+            frenzyRef.current = true;
+            setFrenzy(true);
+            frenzyEndAtRef.current = performance.now() + 6000;
+            sfx.frenzyStart();
+            showComboBanner("FRY FRENZY!", "frenzy");
+            // Immediate chaotic radio
+            fetchRadio();
+        };
+
+        const startTurbo = (durationMs = 2200) => {
+            turboRef.current = true;
+            setTurbo(true);
+            turboEndAtRef.current = performance.now() + durationMs;
+        };
+
         const triggerFry = (x, y) => {
             stateRef.current.fries += 1;
             setFries(stateRef.current.fries);
-            sfx.coin();
+            sfx.crunch();
+            // Combo logic
+            comboRef.current += 1;
+            comboTimerRef.current = 2500; // 2.5s window
+            setCombo(comboRef.current);
+            const c = comboRef.current;
+            if (c === 2)      showComboBanner("Fry Combo x2!");
+            else if (c === 5) { showComboBanner("Fry Combo x5!"); sfx.comboPing(2); }
+            else if (c === 10 && !frenzyRef.current) {
+                startFrenzy();
+            } else if (c > 2 && c % 3 === 0) {
+                sfx.comboPing(1);
+            }
             const id = Date.now() + Math.random();
-            setPops((p) => [...p, { id, x, y, text: "+1 🍟", golden: false }]);
-            setTimeout(() => setPops((p) => p.filter((q) => q.id !== id)), 700);
+            setPops((p) => [...p, { id, x, y, text: `+1 🍟${c >= 2 ? ` ×${c}` : ""}`, golden: false }]);
+            setTimeout(() => setPops((p) => p.filter((q) => q.id !== id)), 800);
             spawnSparkles(x, y, false);
-            // Angel celebrates every few fries
             if (Math.random() < 0.55) {
                 showAngelQuote(pickLine(ANGEL_LINES.fry));
             }
@@ -707,20 +770,32 @@ export default function Game() {
         const triggerGoldenFry = (x, y) => {
             stateRef.current.fries += 5;
             setFries(stateRef.current.fries);
-            sfx.coin();
-            setTimeout(() => sfx.coin(), 120);
+            sfx.heavenlyChoir();
+            // Combo: golden adds a big jump
+            comboRef.current += 3;
+            comboTimerRef.current = 3500;
+            setCombo(comboRef.current);
+            if (comboRef.current >= 10 && !frenzyRef.current) startFrenzy();
+
             const id = Date.now() + Math.random();
             setPops((p) => [...p, { id, x, y, text: "+5 ⭐🍟", golden: true }]);
             setTimeout(() => setPops((p) => p.filter((q) => q.id !== id)), 1300);
             spawnSparkles(x, y, true);
             showAngelQuote("GOLDEN FRY!");
-            // Slow-motion effect
+
+            // Slow-motion effect (existing)
             slowMoRef.current = true;
             setSlowMo(true);
             setTimeout(() => {
                 slowMoRef.current = false;
                 setSlowMo(false);
+                // After slow-mo, turbo mode kicks in
+                startTurbo(2200);
             }, 1500);
+
+            // Police panic reaction
+            setPolicePanic(true);
+            setTimeout(() => setPolicePanic(false), 2200);
         };
 
         const spawn = () => {
@@ -759,10 +834,45 @@ export default function Game() {
             const s = stateRef.current;
             if (!s.running) return;
 
-            // Speed up over time (slow-motion halves movement)
+            // Speed up over time (slow-motion halves movement; turbo / frenzy speed up)
             s.speed = Math.min(13, s.speed + 0.00025 * dt);
-            const slowFactor = slowMoRef.current ? 0.35 : 1;
-            const dy = s.speed * (dt / 16.67) * slowFactor;
+            let multiplier = 1;
+            if (slowMoRef.current) multiplier = 0.35;
+            else if (turboRef.current) multiplier = 1.55;
+            if (frenzyRef.current) multiplier *= 1.30;
+            const dy = s.speed * (dt / 16.67) * multiplier;
+
+            // Combo timer countdown
+            if (comboRef.current > 0) {
+                comboTimerRef.current -= dt;
+                if (comboTimerRef.current <= 0) {
+                    comboRef.current = 0;
+                    setCombo(0);
+                }
+            }
+
+            // Frenzy / turbo expiry
+            if (frenzyRef.current && performance.now() >= frenzyEndAtRef.current) {
+                frenzyRef.current = false;
+                setFrenzy(false);
+            }
+            if (turboRef.current && performance.now() >= turboEndAtRef.current) {
+                turboRef.current = false;
+                setTurbo(false);
+            }
+
+            // Trail particles while turbo or frenzy
+            if ((turboRef.current || frenzyRef.current) && now - lastTrailRef.current > 55) {
+                lastTrailRef.current = now;
+                const px = LANES[s.lane] * width;
+                const py = playerY + 70;
+                const trailId = now + Math.random();
+                const color = turboRef.current ? "gold" : "pink";
+                setTrail((t) => [...t.slice(-14), { id: trailId, x: px, y: py, color }]);
+                setTimeout(() => {
+                    setTrail((t) => t.filter((q) => q.id !== trailId));
+                }, 500);
+            }
 
             // Road scroll
             s.roadOffset = (s.roadOffset + dy) % 1000;
@@ -821,9 +931,10 @@ export default function Game() {
                 }
             }
 
-            // Radio chatter every ~5-6s
+            // Radio chatter — faster cadence during frenzy
             s.radioTimer += dt;
-            if (s.radioTimer > 5500 && !radioReqInFlight) {
+            const radioInterval = frenzyRef.current ? 2800 : 5500;
+            if (s.radioTimer > radioInterval && !radioReqInFlight) {
                 s.radioTimer = 0;
                 radioReqInFlight = true;
                 fetchRadio().finally(() => { radioReqInFlight = false; });
@@ -860,7 +971,7 @@ export default function Game() {
     const playerX = LANES[lane] * shellWidth;
 
     return (
-        <div ref={shellRef} className={`game-shell ${shellShake ? "shake" : ""} ${slowMo ? "slow-mo" : ""}`} data-testid="game-shell">
+        <div ref={shellRef} className={`game-shell ${shellShake ? "shake" : ""} ${slowMo ? "slow-mo" : ""} ${frenzy ? "frenzy" : ""} ${turbo ? "turbo" : ""}`} data-testid="game-shell">
             {/* Road */}
             <div ref={roadRef} className="road" data-testid="road" />
             <div className="siren" />
@@ -921,11 +1032,27 @@ export default function Game() {
                 <img
                     src={IMG.police}
                     alt="police"
-                    className="sprite police-car"
+                    className={`sprite police-car ${policePanic ? "police-panic" : ""}`}
                     style={{ left: "50%" }}
                     draggable={false}
                 />
             )}
+
+            {/* Police panic emoji */}
+            {screen === "playing" && policePanic && (
+                <div className="police-panic-bubble" data-testid="police-panic">
+                    👀❓ WHAT?!
+                </div>
+            )}
+
+            {/* Neon trail behind player car (turbo / frenzy) */}
+            {trail.map((p) => (
+                <div
+                    key={p.id}
+                    className={`car-trail car-trail--${p.color}`}
+                    style={{ left: p.x, top: p.y }}
+                />
+            ))}
 
             {/* Player car */}
             {screen === "playing" && (
@@ -970,6 +1097,12 @@ export default function Game() {
                             <span>🍟</span>
                             <span>{fries}</span>
                         </div>
+                        {combo >= 2 && (
+                            <div className={`hud-pill hud-combo ${frenzy ? "is-frenzy" : ""}`} data-testid="hud-combo">
+                                <span className="text-white/70 text-[10px] uppercase">Combo</span>
+                                <span>x{combo}</span>
+                            </div>
+                        )}
                         <div className="hud-pill" data-testid="hud-hits">
                             <span className="text-white/70 text-[10px] uppercase">Strikes</span>
                             <span>
@@ -1006,6 +1139,13 @@ export default function Game() {
 
             {/* Flash effects */}
             {flashes.map((id) => <div key={id} className="flash-red" />)}
+
+            {/* Combo banner */}
+            {comboBanner && (
+                <div className={`combo-banner combo-banner--${comboBanner.kind}`} data-testid="combo-banner">
+                    {comboBanner.text}
+                </div>
+            )}
 
             {/* Screens */}
             {screen === "title" && (
