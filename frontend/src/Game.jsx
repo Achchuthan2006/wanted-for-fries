@@ -97,33 +97,188 @@ function TitleScreen({ onStart }) {
     );
 }
 
-// ---------- Intro Story ----------
+// ---------- Cinematic Opening Cutscene ----------
+// 8 panels that auto-advance. Total ~20s. Skippable.
+const CUTSCENE_PANELS = [
+    { id: "sunset",     duration: 3000 },
+    { id: "car",        duration: 2500 },
+    { id: "drive",      duration: 3300 },
+    { id: "eat",        duration: 2600 },
+    { id: "fall",       duration: 3600 }, // slow-motion fry drop
+    { id: "reach",      duration: 2200 },
+    { id: "screech",    duration: 1800 },
+    { id: "siren",      duration: 2400 },
+];
+
 function IntroScreen({ onContinue }) {
+    const [step, setStep] = useState(0);
+    const [exiting, setExiting] = useState(false);
+
+    useEffect(() => {
+        if (step >= CUTSCENE_PANELS.length) {
+            setExiting(true);
+            const t = setTimeout(onContinue, 600);
+            return () => clearTimeout(t);
+        }
+        const t = setTimeout(() => setStep((s) => s + 1), CUTSCENE_PANELS[step].duration);
+        return () => clearTimeout(t);
+    }, [step, onContinue]);
+
+    const skip = () => {
+        setExiting(true);
+        setTimeout(onContinue, 350);
+    };
+
+    const panel = CUTSCENE_PANELS[Math.min(step, CUTSCENE_PANELS.length - 1)];
+
     return (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
-            <div className="bg-yellow-50 border-4 border-dashed border-gray-700 rounded-xl p-6 max-w-[340px] w-full font-body shadow-2xl">
-                <div className="font-heading uppercase text-red-700 font-bold text-sm tracking-wider mb-3">
-                    Case File #4815
+        <div
+            data-testid="cutscene"
+            className={`absolute inset-0 z-50 overflow-hidden bg-black ${exiting ? "cine-exit" : ""}`}
+        >
+            {/* Letterbox bars */}
+            <div className="cine-bar cine-bar--top" />
+            <div className="cine-bar cine-bar--bot" />
+
+            {/* Panels */}
+            <CutscenePanel active={panel.id === "sunset"} id="sunset">
+                <div className="cine-sunset-sky" />
+                <div className="cine-sunset-sun" />
+                <div className="cine-mcd">
+                    <span className="cine-mcd-arch">M</span>
+                    <span className="cine-mcd-label">McDriveThru</span>
                 </div>
-                <p className="text-gray-900 font-bold text-base leading-relaxed">
-                    Angel bought a large fries.<br />
-                    Got in her car. Happy.<br />
-                    <span className="text-red-600">One fry escaped.</span><br />
-                    She reached down to save it...<br />
-                    her foot found the gas pedal.
-                </p>
-                <p className="text-gray-700 italic mt-3 text-sm">
-                    Now half the city's police force is in pursuit.
-                    Survive as long as you can. Collect every fry.
-                </p>
+                <div className="cine-angel cine-angel--walk">
+                    <span className="cine-angel-emoji" role="img" aria-label="Angel">🧑‍🦱</span>
+                    <span className="cine-bag" role="img" aria-label="Bag">🛍️</span>
+                </div>
+                <div className="cine-caption">A perfectly normal Tuesday evening...</div>
+            </CutscenePanel>
+
+            <CutscenePanel active={panel.id === "car"} id="car">
+                <div className="cine-city-bg" />
+                <div className="cine-car-scene">
+                    <span className="cine-angel-emoji cine-bounce-in">🧑‍🦱</span>
+                    <img src={IMG.player} alt="" className="cine-car-img cine-bounce-in" style={{ animationDelay: "0.3s" }} />
+                </div>
+                <div className="cine-notes">
+                    <span style={{ animationDelay: "0s"   }}>♪</span>
+                    <span style={{ animationDelay: "0.4s" }}>♫</span>
+                    <span style={{ animationDelay: "0.8s" }}>♪</span>
+                </div>
+                <div className="cine-caption">She got in her car. Fries on the seat. Big mood.</div>
+            </CutscenePanel>
+
+            <CutscenePanel active={panel.id === "drive"} id="drive">
+                <div className="cine-dashboard">
+                    {/* Windshield with scrolling city */}
+                    <div className="cine-windshield">
+                        <div className="cine-cityscape" />
+                        <div className="cine-cityscape cine-cityscape--two" />
+                    </div>
+                    {/* Dashboard */}
+                    <div className="cine-dash-panel">
+                        <div className="cine-steering">
+                            <div className="cine-steering-spoke" />
+                            <div className="cine-steering-spoke cine-steering-spoke--v" />
+                        </div>
+                        <div className="cine-passenger-seat">
+                            <img src={IMG.fry} alt="" className="cine-fries-pack" />
+                            <span className="cine-fry-float" style={{ animationDelay: "0s" }}>🍟</span>
+                            <span className="cine-fry-float" style={{ animationDelay: "0.6s" }}>🍟</span>
+                        </div>
+                    </div>
+                </div>
+                <div className="cine-notes cine-notes--right">
+                    <span style={{ animationDelay: "0.1s" }}>♪</span>
+                    <span style={{ animationDelay: "0.5s" }}>♬</span>
+                </div>
+                <div className="cine-caption">Cruising. Vibing. One hand on the wheel.</div>
+            </CutscenePanel>
+
+            <CutscenePanel active={panel.id === "eat"} id="eat">
+                <div className="cine-closeup-bg" />
+                <div className="cine-angel-closeup">
+                    <span className="cine-face">😋</span>
+                    <span className="cine-fry-eat">🍟</span>
+                </div>
+                <div className="cine-notes cine-notes--center">
+                    <span style={{ animationDelay: "0s"   }}>♪</span>
+                    <span style={{ animationDelay: "0.3s" }}>♫</span>
+                    <span style={{ animationDelay: "0.6s" }}>♪</span>
+                </div>
+                <div className="cine-caption">"Mmmm. Heaven in stick form."</div>
+            </CutscenePanel>
+
+            <CutscenePanel active={panel.id === "fall"} id="fall">
+                <div className="cine-slowmo-bg" />
+                <div className="cine-vignette" />
+                <div className="cine-pedals">
+                    <div className="cine-pedal cine-pedal--brake">B</div>
+                    <div className="cine-pedal cine-pedal--gas">G</div>
+                </div>
+                <span className="cine-falling-fry" role="img" aria-label="Falling fry">🍟</span>
+                <div className="cine-radial-flash" />
+                <div className="cine-caption cine-caption--dramatic">Suddenly... one fry... falls.</div>
+                <div className="cine-slowmo-label">— SLOW MOTION —</div>
+            </CutscenePanel>
+
+            <CutscenePanel active={panel.id === "reach"} id="reach">
+                <div className="cine-zoom-bg" />
+                <div className="cine-angel-zoom">
+                    <span className="cine-face cine-face--panic">😱</span>
+                </div>
+                <div className="cine-zoom-lines" />
+                <div className="cine-caption cine-caption--dramatic">"I CAN SAVE IT!"</div>
+            </CutscenePanel>
+
+            <CutscenePanel active={panel.id === "screech"} id="screech">
+                <div className="cine-white-flash" />
+                <div className="cine-shake-wrap">
+                    <div className="cine-impact">SCREECH!</div>
+                    <div className="cine-impact cine-impact--two">VRRROOM!</div>
+                    <div className="cine-skid-mark cine-skid-mark--l" />
+                    <div className="cine-skid-mark cine-skid-mark--r" />
+                </div>
+                <div className="cine-caption">Her foot found the wrong pedal.</div>
+            </CutscenePanel>
+
+            <CutscenePanel active={panel.id === "siren"} id="siren">
+                <div className="cine-night-bg" />
+                <div className="cine-blur-streaks" />
+                <div className="cine-siren-strobe" />
+                <img src={IMG.player} alt="" className="cine-end-player" />
+                <img src={IMG.police} alt="" className="cine-end-police" />
+                <div className="cine-end-title">WANTED FOR FRIES</div>
+                <div className="cine-caption cine-caption--dramatic">The chase has begun.</div>
+            </CutscenePanel>
+
+            {/* Progress dots */}
+            <div className="cine-progress">
+                {CUTSCENE_PANELS.map((p, i) => (
+                    <span key={p.id} className={`cine-dot ${i <= step ? "is-on" : ""}`} />
+                ))}
             </div>
+
             <button
                 data-testid="intro-continue-button"
-                className="btn-arcade mt-7 text-xl"
-                onClick={onContinue}
+                className="cine-skip"
+                onClick={skip}
+                aria-label="Skip cutscene"
             >
-                Floor It!
+                Skip ▸
             </button>
+        </div>
+    );
+}
+
+function CutscenePanel({ active, id, children }) {
+    return (
+        <div
+            className={`cine-panel cine-panel--${id} ${active ? "is-active" : ""}`}
+            aria-hidden={!active}
+        >
+            {children}
         </div>
     );
 }

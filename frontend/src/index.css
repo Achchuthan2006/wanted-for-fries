@@ -919,3 +919,695 @@ body {
     100% { opacity: 0; transform: scale(1.25); }
 }
 
+
+/* ============================================ */
+/* ===== Cinematic Opening Cutscene Styles ==== */
+/* ============================================ */
+
+/* Letterbox bars */
+.cine-bar {
+    position: absolute;
+    left: 0; right: 0;
+    height: 36px;
+    background: #000;
+    z-index: 60;
+    animation: cine-bar-in 0.5s ease-out forwards;
+}
+.cine-bar--top { top: 0;    transform: translateY(-100%); }
+.cine-bar--bot { bottom: 0; transform: translateY(100%); }
+@keyframes cine-bar-in {
+    to { transform: translateY(0); }
+}
+
+/* Skip + progress */
+.cine-skip {
+    position: absolute;
+    top: 44px;
+    right: 12px;
+    z-index: 70;
+    background: rgba(0,0,0,0.65);
+    color: #FFC72C;
+    border: 1.5px solid rgba(255,199,44,0.8);
+    border-radius: 9999px;
+    padding: 4px 12px;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+.cine-skip:hover { background: #FFC72C; color: #DA291C; }
+.cine-progress {
+    position: absolute;
+    top: 44px;
+    left: 12px;
+    z-index: 70;
+    display: flex;
+    gap: 5px;
+}
+.cine-dot {
+    width: 14px; height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.25);
+    transition: background 0.3s;
+}
+.cine-dot.is-on { background: #FFC72C; box-shadow: 0 0 6px rgba(255,199,44,0.7); }
+
+/* Panel base — only active panel is visible */
+.cine-panel {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease-out;
+    z-index: 55;
+    overflow: hidden;
+}
+.cine-panel.is-active { opacity: 1; }
+.cine-exit { animation: cine-fadeout 0.6s ease-in forwards; }
+@keyframes cine-fadeout { to { opacity: 0; } }
+
+/* Universal caption */
+.cine-caption {
+    position: absolute;
+    bottom: 56px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 24px;
+    font-size: 13px;
+    text-align: center;
+    max-width: 90%;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255,199,44,0.35);
+    animation: cap-in 0.5s 0.2s both ease-out;
+    z-index: 56;
+}
+.cine-caption--dramatic {
+    color: #FFC72C;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-color: #FFC72C;
+}
+@keyframes cap-in {
+    from { transform: translate(-50%, 10px); opacity: 0; }
+    to   { transform: translate(-50%, 0);    opacity: 1; }
+}
+
+/* ---- Panel 1: Sunset McDonald's ---- */
+.cine-sunset-sky {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg,
+        #2c1259 0%,
+        #8e2a6e 25%,
+        #f4724a 55%,
+        #ffb454 75%,
+        #ffe2a9 92%,
+        #6a8e8b 100%);
+}
+.cine-sunset-sun {
+    position: absolute;
+    bottom: 26%;
+    left: 50%;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    transform: translateX(-50%);
+    background: radial-gradient(circle, #fff5a3 0%, #ffb454 60%, transparent 75%);
+    box-shadow: 0 0 80px rgba(255,180,84,0.65);
+    animation: sun-dip 3s ease-in;
+}
+@keyframes sun-dip {
+    from { transform: translate(-50%, -40px); opacity: 0.6; }
+    to   { transform: translate(-50%, 0);     opacity: 1; }
+}
+.cine-mcd {
+    position: absolute;
+    top: 28%;
+    right: 8%;
+    text-align: center;
+    color: #fff;
+    text-shadow: 0 2px 0 #DA291C;
+    z-index: 2;
+}
+.cine-mcd-arch {
+    display: block;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    color: #FFC72C;
+    font-size: 64px;
+    line-height: 0.8;
+    text-shadow: 3px 3px 0 #DA291C, 0 0 16px rgba(255,199,44,0.6);
+    animation: arch-glow 1.4s ease-in-out infinite alternate;
+}
+.cine-mcd-label {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #fff;
+    background: #DA291C;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+@keyframes arch-glow {
+    from { text-shadow: 3px 3px 0 #DA291C, 0 0 16px rgba(255,199,44,0.6); }
+    to   { text-shadow: 3px 3px 0 #DA291C, 0 0 32px rgba(255,199,44,1); }
+}
+.cine-angel {
+    position: absolute;
+    bottom: 18%;
+    font-size: 56px;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+    z-index: 3;
+}
+.cine-angel--walk {
+    left: -80px;
+    animation: angel-walk 2.5s 0.2s ease-out forwards;
+}
+.cine-angel-emoji { display: inline-block; animation: walk-bob 0.35s steps(2) infinite; }
+.cine-bag {
+    position: absolute;
+    top: 18px;
+    right: -22px;
+    font-size: 30px;
+    animation: bag-swing 0.6s ease-in-out infinite alternate;
+}
+@keyframes angel-walk {
+    from { left: -80px; }
+    to   { left: 18%; }
+}
+@keyframes bag-swing {
+    from { transform: rotate(-8deg); }
+    to   { transform: rotate(8deg); }
+}
+
+/* ---- Panel 2: Get in car ---- */
+.cine-city-bg {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(180deg, #6c4ea5 0%, #d77471 35%, #f9b663 65%, #2a1f3d 100%);
+}
+.cine-city-bg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        repeating-linear-gradient(90deg,
+            transparent 0 60px,
+            rgba(0,0,0,0.18) 60px 100px,
+            transparent 100px 160px,
+            rgba(0,0,0,0.25) 160px 220px);
+    bottom: 30%;
+    top: 35%;
+}
+.cine-car-scene {
+    position: absolute;
+    left: 50%;
+    bottom: 18%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    z-index: 2;
+}
+.cine-car-img {
+    width: 130px;
+    filter: drop-shadow(0 10px 18px rgba(0,0,0,0.55));
+}
+.cine-bounce-in {
+    animation: bounce-in 0.6s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes bounce-in {
+    from { transform: scale(0.5) translateY(20px); opacity: 0; }
+    to   { transform: scale(1) translateY(0);     opacity: 1; }
+}
+.cine-notes {
+    position: absolute;
+    top: 22%;
+    left: 18%;
+    font-size: 28px;
+    color: #FFC72C;
+    z-index: 3;
+    pointer-events: none;
+}
+.cine-notes--right { left: auto; right: 14%; }
+.cine-notes--center { left: 50%; transform: translateX(-50%); top: 14%; }
+.cine-notes span {
+    display: inline-block;
+    margin: 0 4px;
+    text-shadow: 0 0 8px rgba(255,199,44,0.8);
+    animation: note-float 1.6s ease-in-out infinite;
+}
+@keyframes note-float {
+    0%   { transform: translateY(0) rotate(-10deg); opacity: 0; }
+    25%  { opacity: 1; }
+    100% { transform: translateY(-50px) rotate(15deg); opacity: 0; }
+}
+
+/* ---- Panel 3: Dashboard / driving ---- */
+.cine-dashboard {
+    position: absolute;
+    inset: 0;
+    background: #0d1117;
+}
+.cine-windshield {
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    top: 12%;
+    height: 45%;
+    border-radius: 14px 14px 30px 30px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #1a0f3d 0%, #5a2b6e 50%, #b8633a 100%);
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.5), 0 6px 0 rgba(0,0,0,0.4);
+    border: 4px solid #1f1620;
+}
+.cine-cityscape {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 200%;
+    height: 80%;
+    background:
+        radial-gradient(circle at 5% 70%,  #ff9d4a 4px, transparent 6px) 0 0,
+        radial-gradient(circle at 14% 50%, #ffe066 4px, transparent 6px) 0 0,
+        radial-gradient(circle at 24% 65%, #ff6b6b 4px, transparent 6px) 0 0,
+        radial-gradient(circle at 33% 45%, #ffd700 4px, transparent 6px) 0 0,
+        radial-gradient(circle at 45% 60%, #66d9ef 4px, transparent 6px) 0 0,
+        radial-gradient(circle at 56% 40%, #ff9d4a 4px, transparent 6px) 0 0,
+        radial-gradient(circle at 68% 55%, #ffe066 4px, transparent 6px) 0 0,
+        radial-gradient(circle at 78% 50%, #ff6b6b 4px, transparent 6px) 0 0,
+        radial-gradient(circle at 88% 65%, #66d9ef 4px, transparent 6px) 0 0,
+        repeating-linear-gradient(90deg,
+            #1c1330 0 24px,
+            #2a1845 24px 50px,
+            #1c1330 50px 80px);
+    animation: cityscape-scroll 4s linear infinite;
+}
+.cine-cityscape--two {
+    animation-delay: -2s;
+    opacity: 0.6;
+    height: 60%;
+}
+@keyframes cityscape-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+}
+.cine-dash-panel {
+    position: absolute;
+    left: 0; right: 0;
+    bottom: 0;
+    height: 38%;
+    background: linear-gradient(180deg, #1c1620 0%, #0a0810 100%);
+    border-top: 6px solid #2a2030;
+    box-shadow: inset 0 12px 24px rgba(0,0,0,0.6);
+}
+.cine-steering {
+    position: absolute;
+    left: 22%;
+    bottom: 4%;
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #2a2030 30%, #0a0810 60%, #1c1620 80%);
+    border: 4px solid #3a2c44;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.5), inset 0 0 12px rgba(0,0,0,0.8);
+    animation: steer-wiggle 1.8s ease-in-out infinite alternate;
+}
+.cine-steering-spoke {
+    position: absolute;
+    left: 6%; right: 6%; top: 48%;
+    height: 4%;
+    background: #FFC72C;
+    border-radius: 2px;
+}
+.cine-steering-spoke--v {
+    left: 48%; right: 48%; top: 6%; bottom: 6%;
+    width: 4%; height: auto;
+}
+@keyframes steer-wiggle {
+    from { transform: rotate(-8deg); }
+    to   { transform: rotate(8deg); }
+}
+.cine-passenger-seat {
+    position: absolute;
+    right: 12%;
+    bottom: 8%;
+    width: 90px;
+    height: 80px;
+    background: linear-gradient(180deg, #5a3a2a 0%, #3a2418 100%);
+    border-radius: 10px 10px 16px 16px;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.6), 0 4px 0 rgba(0,0,0,0.5);
+    border: 2px solid #2a1a10;
+}
+.cine-fries-pack {
+    position: absolute;
+    top: -32px;
+    left: 50%;
+    width: 50px;
+    transform: translateX(-50%);
+    filter: drop-shadow(0 0 8px rgba(255,199,44,0.6));
+}
+.cine-fry-float {
+    position: absolute;
+    top: -50px;
+    left: 50%;
+    font-size: 22px;
+    animation: fry-jiggle 1.4s ease-in-out infinite alternate;
+}
+@keyframes fry-jiggle {
+    from { transform: translate(-50%, 0) rotate(-8deg); }
+    to   { transform: translate(-50%, -4px) rotate(8deg); }
+}
+
+/* ---- Panel 4: Eating close-up ---- */
+.cine-closeup-bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, #f9b663 0%, #d77471 40%, #2a1f3d 100%);
+}
+.cine-angel-closeup {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 130px;
+    text-align: center;
+    filter: drop-shadow(0 8px 16px rgba(0,0,0,0.5));
+    animation: zoom-in 1s ease-out;
+}
+.cine-face { display: block; }
+.cine-fry-eat {
+    position: absolute;
+    top: -30px;
+    left: 60%;
+    font-size: 50px;
+    animation: fry-to-mouth 1.4s ease-in-out infinite;
+}
+@keyframes fry-to-mouth {
+    0%   { transform: translateY(-40px) rotate(15deg); opacity: 0; }
+    30%  { opacity: 1; }
+    70%  { transform: translateY(20px) rotate(-10deg); opacity: 1; }
+    100% { transform: translateY(40px) rotate(0); opacity: 0; }
+}
+@keyframes zoom-in {
+    from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    to   { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+}
+
+/* ---- Panel 5: Slow-mo fry fall ---- */
+.cine-slowmo-bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 60%, #1a0f3d 0%, #06030f 100%);
+}
+.cine-vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.85) 100%);
+    pointer-events: none;
+    z-index: 2;
+}
+.cine-pedals {
+    position: absolute;
+    left: 50%;
+    bottom: 18%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 18px;
+    z-index: 3;
+}
+.cine-pedal {
+    width: 48px;
+    height: 70px;
+    background: linear-gradient(180deg, #4a3a2a 0%, #1c1410 100%);
+    border-radius: 8px 8px 14px 14px;
+    border: 2px solid #2a1a10;
+    box-shadow: inset 0 -8px 12px rgba(0,0,0,0.5), 0 4px 0 rgba(0,0,0,0.4);
+    color: #FFC72C;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    text-align: center;
+    padding-top: 8px;
+}
+.cine-pedal--gas { box-shadow: inset 0 -8px 12px rgba(0,0,0,0.5), 0 4px 0 rgba(218,41,28,0.6), 0 0 30px rgba(218,41,28,0.5); }
+.cine-falling-fry {
+    position: absolute;
+    left: 50%;
+    top: 8%;
+    font-size: 52px;
+    z-index: 4;
+    transform: translateX(-50%);
+    filter: drop-shadow(0 0 18px rgba(255,199,44,1)) drop-shadow(0 0 36px rgba(255,199,44,0.6));
+    animation: fry-slow-fall 3.4s cubic-bezier(.45,.05,.55,.95) forwards;
+}
+@keyframes fry-slow-fall {
+    0%   { top: 8%;  transform: translateX(-50%) rotate(0deg);     scale: 1.4; }
+    50%  { top: 40%; transform: translateX(-50%) rotate(180deg);   scale: 1.2; }
+    100% { top: 65%; transform: translateX(-30%) rotate(420deg);   scale: 1; }
+}
+.cine-radial-flash {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 60%,
+        rgba(255,215,0,0.25) 0%,
+        transparent 40%);
+    animation: radial-pulse 1.4s ease-in-out infinite;
+    pointer-events: none;
+}
+@keyframes radial-pulse {
+    0%, 100% { opacity: 0.6; }
+    50%      { opacity: 1; }
+}
+.cine-slowmo-label {
+    position: absolute;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #FFC72C;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    background: rgba(0,0,0,0.7);
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,199,44,0.6);
+    animation: cap-in 0.4s 0.2s both;
+    z-index: 5;
+}
+
+/* ---- Panel 6: Reach (zoom on face) ---- */
+.cine-zoom-bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, #DA291C 0%, #1a0509 100%);
+    animation: zoom-bg-pulse 0.4s ease-out infinite alternate;
+}
+@keyframes zoom-bg-pulse {
+    from { filter: brightness(1); }
+    to   { filter: brightness(1.2); }
+}
+.cine-angel-zoom {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    font-size: 200px;
+    transform: translate(-50%, -50%);
+    animation: dramatic-zoom 1.8s ease-out forwards;
+    text-align: center;
+    filter: drop-shadow(0 0 30px rgba(255,199,44,0.7));
+    z-index: 2;
+}
+@keyframes dramatic-zoom {
+    from { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+    35%  { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1.4); opacity: 1; }
+}
+.cine-face--panic { animation: face-shake 0.16s steps(2) infinite; }
+@keyframes face-shake {
+    0%, 100% { transform: translateX(0); }
+    50%      { transform: translateX(4px); }
+}
+.cine-zoom-lines {
+    position: absolute;
+    inset: 0;
+    background:
+        repeating-conic-gradient(from 0deg at 50% 50%,
+            transparent 0deg 14deg,
+            rgba(255,199,44,0.25) 14deg 16deg);
+    animation: lines-spin 4s linear infinite;
+    pointer-events: none;
+    mix-blend-mode: screen;
+}
+@keyframes lines-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ---- Panel 7: Screech ---- */
+.cine-white-flash {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    animation: white-flash 0.5s ease-out forwards;
+    z-index: 4;
+    pointer-events: none;
+}
+@keyframes white-flash {
+    0%   { opacity: 1; }
+    100% { opacity: 0; }
+}
+.cine-shake-wrap {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, #2a1f3d 0%, #0a0810 100%);
+    animation: cine-shake 0.1s steps(2) infinite;
+}
+@keyframes cine-shake {
+    0%, 100% { transform: translate(0, 0); }
+    25%      { transform: translate(-6px, 3px); }
+    50%      { transform: translate(6px, -3px); }
+    75%      { transform: translate(-3px, -6px); }
+}
+.cine-impact {
+    position: absolute;
+    left: 50%;
+    top: 35%;
+    transform: translateX(-50%) rotate(-6deg);
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    color: #fff;
+    font-size: 52px;
+    text-shadow:
+        4px 4px 0 #DA291C,
+        -2px -2px 0 #DA291C,
+        2px -2px 0 #DA291C,
+        -2px 2px 0 #DA291C,
+        0 8px 16px rgba(0,0,0,0.5);
+    animation: impact-pop 0.5s ease-out backwards;
+    z-index: 5;
+}
+.cine-impact--two {
+    top: 56%;
+    color: #FFC72C;
+    font-size: 36px;
+    animation-delay: 0.25s;
+    transform: translateX(-50%) rotate(4deg);
+}
+@keyframes impact-pop {
+    from { transform: translateX(-50%) scale(0.2) rotate(-15deg); opacity: 0; }
+    60%  { transform: translateX(-50%) scale(1.2)  rotate(-6deg); opacity: 1; }
+    to   { transform: translateX(-50%) scale(1)    rotate(-6deg); opacity: 1; }
+}
+.cine-skid-mark {
+    position: absolute;
+    bottom: 10%;
+    width: 8px;
+    height: 200px;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, #000 60%, #000 100%);
+    border-radius: 4px;
+    filter: blur(0.5px);
+    animation: skid-grow 0.7s 0.1s ease-out backwards;
+}
+.cine-skid-mark--l { left: 32%; transform: rotate(-3deg); }
+.cine-skid-mark--r { left: 64%; transform: rotate(3deg); }
+@keyframes skid-grow {
+    from { height: 0; opacity: 0; }
+    to   { height: 200px; opacity: 1; }
+}
+
+/* ---- Panel 8: Siren + speed ---- */
+.cine-night-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, #06020f 0%, #1a0a2e 60%, #06020f 100%);
+}
+.cine-blur-streaks {
+    position: absolute;
+    inset: 0;
+    background:
+        repeating-linear-gradient(90deg,
+            transparent 0 30px,
+            rgba(255,199,44,0.25) 30px 32px,
+            transparent 32px 60px,
+            rgba(255,255,255,0.18) 60px 62px,
+            transparent 62px 120px),
+        repeating-linear-gradient(90deg,
+            transparent 0 20px,
+            rgba(102,217,239,0.18) 20px 22px,
+            transparent 22px 90px);
+    animation: streaks-blur 0.4s linear infinite;
+    filter: blur(1px);
+    opacity: 0.9;
+}
+@keyframes streaks-blur {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-120px); }
+}
+.cine-siren-strobe {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 220px 280px at 95% 80%, rgba(0,90,255,0.7), transparent 60%),
+        radial-gradient(ellipse 220px 280px at 100% 80%, rgba(255,30,60,0.7), transparent 60%);
+    mix-blend-mode: screen;
+    animation: strobe-flash 0.4s steps(2) infinite;
+}
+@keyframes strobe-flash {
+    0%, 49% { opacity: 0.5; }
+    50%, 100% { opacity: 1; }
+}
+.cine-end-player {
+    position: absolute;
+    left: 50%;
+    bottom: 24%;
+    width: 100px;
+    transform: translateX(-50%);
+    filter: drop-shadow(0 6px 14px rgba(0,0,0,0.7));
+    animation: end-flee 1.5s ease-out;
+}
+.cine-end-police {
+    position: absolute;
+    right: -90px;
+    bottom: 16%;
+    width: 76px;
+    filter: drop-shadow(0 6px 14px rgba(0,90,255,0.6));
+    animation: end-pursuit 1.8s ease-out forwards;
+}
+@keyframes end-flee {
+    from { transform: translateX(-50%) scale(0.6); opacity: 0; }
+    to   { transform: translateX(-50%) scale(1);   opacity: 1; }
+}
+@keyframes end-pursuit {
+    from { right: -90px; opacity: 0; }
+    to   { right: 18%;   opacity: 1; }
+}
+.cine-end-title {
+    position: absolute;
+    top: 16%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 900;
+    font-size: 36px;
+    color: #FFC72C;
+    letter-spacing: 0.04em;
+    text-shadow: 3px 3px 0 #DA291C, 0 0 22px rgba(255,199,44,0.7);
+    animation: title-stamp 0.6s 0.6s cubic-bezier(.34,1.56,.64,1) backwards;
+    z-index: 3;
+}
+@keyframes title-stamp {
+    from { transform: translateX(-50%) scale(2.5) rotate(-8deg); opacity: 0; }
+    to   { transform: translateX(-50%) scale(1)   rotate(-3deg); opacity: 1; }
+}
+
