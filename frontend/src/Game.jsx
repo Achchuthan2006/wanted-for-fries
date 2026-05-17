@@ -14,6 +14,12 @@ const IMG = {
     fry: "https://static.prod-images.emergentagent.com/jobs/f6836503-9171-41cb-82ba-84c20e30f37b/images/4168de88d6eb27cff5a441c70c774da5dc7cb72698bd7e193a33ff3dc2eab043.png",
 };
 
+const EARLY_INTRO_LINES = [
+    "Suspect accelerating rapidly!",
+    "Vehicle refusing to stop!",
+    "This driver is either highly trained or highly confused!",
+];
+
 const LANES = [0.22, 0.5, 0.78]; // left, center, right (% of width)
 const MAX_HITS = 3;
 const OBSTACLE_TYPES = ["cone", "barrier", "civilian", "civilian"];
@@ -126,7 +132,7 @@ export default function Game() {
     const [distance, setDistance] = useState(0);
     const [fries, setFries] = useState(0);
     const [hits, setHits] = useState(0);
-    const [radio, setRadio] = useState("Dispatch: All units, suspect in red sedan...");
+    const [radio, setRadio] = useState(EARLY_INTRO_LINES[0]);
     const [shellShake, setShellShake] = useState(false);
     const [flashes, setFlashes] = useState([]);
     const [pops, setPops] = useState([]);
@@ -171,7 +177,7 @@ export default function Game() {
         setDistance(0);
         setFries(0);
         setHits(0);
-        setRadio("Dispatch: All units, suspect in red sedan...");
+        setRadio(EARLY_INTRO_LINES[Math.floor(Math.random() * EARLY_INTRO_LINES.length)]);
         setScreen("playing");
     };
 
@@ -375,9 +381,9 @@ export default function Game() {
                 if (e.y > height + 120) ents.splice(i, 1);
             }
 
-            // Radio chatter every ~7-10s
+            // Radio chatter every ~5-6s
             s.radioTimer += dt;
-            if (s.radioTimer > 8500 && !radioReqInFlight) {
+            if (s.radioTimer > 5500 && !radioReqInFlight) {
                 s.radioTimer = 0;
                 radioReqInFlight = true;
                 fetchRadio().finally(() => { radioReqInFlight = false; });

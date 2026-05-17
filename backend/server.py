@@ -43,27 +43,30 @@ class ScoreRecord(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
-# ---- Hardcoded fallback chatter ----
-FALLBACK_LINES = {
+# ---- Scripted radio chatter (primary source) ----
+SCRIPTED_LINES = {
     "early": [
-        "Dispatch, suspect fleeing in red sedan, speed unknown.",
-        "All units, white-knuckle driver heading north. Possible DUI.",
-        "Be advised: erratic acceleration. Could be a getaway driver.",
-        "Suspect appears to be... reaching for something on the floor?",
+        "Suspect accelerating rapidly!",
+        "Vehicle refusing to stop!",
+        "This driver is either highly trained or highly confused!",
     ],
     "mid": [
-        "Confirmed: suspect is reaching for a single french fry.",
-        "Wait, did you say... a fry? Like, McDonald's?",
-        "Repeat: she dropped one fry. We're chasing her over ONE FRY.",
-        "Captain, are we sure we should be using the helicopter for this?",
+        "Dispatch... I think fries are falling out of the vehicle.",
+        "Did you say fries?",
+        "Suspect appears emotionally attached to french fries.",
+        "She swerved across four lanes for one potato.",
+        "I repeat... this may be fry-related.",
     ],
     "late": [
-        "She really wants that fry, sir. Like, REALLY wants it.",
-        "Dispatch, the fry has been recovered. It's... salty. Over.",
-        "Sir, I'm not joking. The whole pursuit was the fry. The fry, sir.",
-        "I quit. I'm becoming a baker. At least bread makes sense.",
+        "All units... pursuit appears potato-related.",
+        "This pursuit is over fast food?",
+        "The fries cannot be worth this.",
+        "Requesting backup and possibly therapy.",
+        "Ma'am please let the fry go.",
     ],
 }
+# Backward-compat alias
+FALLBACK_LINES = SCRIPTED_LINES
 
 
 @api_router.get("/")
@@ -73,9 +76,14 @@ async def root():
 
 @api_router.post("/radio", response_model=RadioResponse)
 async def get_radio_line(req: RadioRequest):
-    phase = req.phase if req.phase in FALLBACK_LINES else "early"
+    phase = req.phase if req.phase in SCRIPTED_LINES else "early"
 
-    # Try LLM first
+    # 65% of the time use the scripted lines so the player reliably hears them.
+    # 35% of the time spice it up with a fresh AI-generated line.
+    if random.random() < 0.65:
+        return RadioResponse(line=random.choice(SCRIPTED_LINES[phase]), source="scripted")
+
+    # Try LLM
     try:
         from emergentintegrations.llm.chat import LlmChat, UserMessage
 
@@ -120,9 +128,9 @@ async def get_radio_line(req: RadioRequest):
                 line = line[:177] + "..."
             return RadioResponse(line=line, source="ai")
     except Exception as e:
-        logger.warning(f"LLM radio failed, using fallback: {e}")
+        logger.warning(f"LLM radio failed, using scripted: {e}")
 
-    return RadioResponse(line=random.choice(FALLBACK_LINES[phase]), source="fallback")
+    return RadioResponse(line=random.choice(SCRIPTED_LINES[phase]), source="scripted")
 
 
 @api_router.post("/scores", response_model=ScoreRecord)
