@@ -45,33 +45,52 @@ const LANES = [0.22, 0.5, 0.78]; // left, center, right (% of width)
 const MAX_HITS = 3;
 const OBSTACLE_TYPES = ["cone", "barrier", "civilian", "civilian"];
 
-// ---------- Title Screen ----------
+// ---------- Animated Title Screen ----------
 function TitleScreen({ onStart }) {
     return (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center p-6 bg-black/70 backdrop-blur-sm">
-            <div className="text-center">
-                <div className="font-heading title-stroke text-5xl sm:text-6xl font-black tracking-tight uppercase leading-none">
-                    Wanted<br />for Fries
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center p-6 bg-black/70 backdrop-blur-sm overflow-hidden">
+            {/* Animated background: falling fries */}
+            <div className="title-fries">
+                {Array.from({ length: 10 }).map((_, i) => (
+                    <span key={i} className="title-fry" style={{
+                        left: `${(i * 11 + 5) % 95}%`,
+                        animationDelay: `${(i * 0.4) % 4}s`,
+                        animationDuration: `${4 + (i % 3)}s`,
+                    }}>🍟</span>
+                ))}
+            </div>
+
+            {/* Mini chase scene */}
+            <div className="title-chase">
+                <img src={IMG.player} alt="" className="title-player-car" />
+                <img src={IMG.police} alt="" className="title-police-car" />
+                <div className="title-skid-line" />
+                <div className="title-skid-line title-skid-line--two" />
+            </div>
+
+            <div className="text-center relative z-10">
+                <div className="title-wobble">
+                    <div className="font-heading title-stroke text-5xl sm:text-6xl font-black tracking-tight uppercase leading-none">
+                        Wanted<br />for Fries
+                    </div>
                 </div>
-                <div className="mt-5 font-heading text-2xl text-white font-bold tracking-wide">
+                <div className="mt-5 font-heading text-2xl text-white font-bold tracking-wide title-shimmer">
                     Angel: The Stunt Driver
                 </div>
-                <div className="mt-3 font-body text-xs text-yellow-300/80 italic">
+                <div className="mt-3 font-body text-xs text-yellow-300/80 italic title-tagline">
                     Based on a true fry-related incident.
                 </div>
             </div>
 
-            <div className="my-7 text-5xl select-none animate-bounce">🚓💨🍟</div>
-
             <button
                 data-testid="start-button"
-                className="btn-arcade text-2xl"
+                className="btn-arcade text-2xl mt-8 title-cta relative z-10"
                 onClick={onStart}
             >
                 Start Chase
             </button>
 
-            <div className="absolute bottom-4 text-[10px] text-white/40 font-mono tracking-widest uppercase">
+            <div className="absolute bottom-4 text-[10px] text-white/40 font-mono tracking-widest uppercase z-10">
                 Tap / Swipe / Arrow Keys
             </div>
         </div>
@@ -239,6 +258,10 @@ export default function Game() {
     const [flashes, setFlashes] = useState([]);
     const [pops, setPops] = useState([]);
     const [angelQuote, setAngelQuote] = useState(null); // {id, text}
+    const [skids, setSkids] = useState([]); // {id, x, dir}
+    const [sparkles, setSparkles] = useState([]); // {id, x, y, golden}
+    const [slowMo, setSlowMo] = useState(false);
+    const slowMoRef = useRef(false);
 
     const shellRef = useRef(null);
     const roadRef = useRef(null);
@@ -284,6 +307,10 @@ export default function Game() {
         setHits(0);
         setDodged(0);
         setAngelQuote(null);
+        setSkids([]);
+        setSparkles([]);
+        setSlowMo(false);
+        slowMoRef.current = false;
         setRadio(EARLY_INTRO_LINES[Math.floor(Math.random() * EARLY_INTRO_LINES.length)]);
         setScreen("playing");
     };
@@ -292,9 +319,18 @@ export default function Game() {
         if (!stateRef.current.running) return;
         const next = Math.max(0, Math.min(2, stateRef.current.lane + dir));
         if (next !== stateRef.current.lane) {
+            const prevLane = stateRef.current.lane;
             stateRef.current.lane = next;
             setLane(next);
             sfx.swerve();
+            // Tire skid mark at the OLD lane position
+            const shellW = shellRef.current?.clientWidth || 380;
+            const skidId = Date.now() + Math.random();
+            const skidX = LANES[prevLane] * shellW;
+            setSkids((arr) => [...arr.slice(-6), { id: skidId, x: skidX, dir }]);
+            setTimeout(() => {
+                setSkids((arr) => arr.filter((s) => s.id !== skidId));
+            }, 900);
         }
     }, []);
 
@@ -405,17 +441,51 @@ export default function Game() {
             }
         };
 
+        const spawnSparkles = (x, y, golden = false) => {
+            const id = Date.now() + Math.random();
+            const count = golden ? 12 : 6;
+            const parts = Array.from({ length: count }).map((_, i) => ({
+                k: i,
+                angle: (Math.PI * 2 * i) / count + Math.random() * 0.4,
+                dist: golden ? 40 + Math.random() * 30 : 22 + Math.random() * 18,
+            }));
+            setSparkles((arr) => [...arr.slice(-12), { id, x, y, golden, parts }]);
+            setTimeout(() => {
+                setSparkles((arr) => arr.filter((s) => s.id !== id));
+            }, golden ? 900 : 650);
+        };
+
         const triggerFry = (x, y) => {
             stateRef.current.fries += 1;
             setFries(stateRef.current.fries);
             sfx.coin();
             const id = Date.now() + Math.random();
-            setPops((p) => [...p, { id, x, y }]);
+            setPops((p) => [...p, { id, x, y, text: "+1 🍟", golden: false }]);
             setTimeout(() => setPops((p) => p.filter((q) => q.id !== id)), 700);
+            spawnSparkles(x, y, false);
             // Angel celebrates every few fries
             if (Math.random() < 0.55) {
                 showAngelQuote(pickLine(ANGEL_LINES.fry));
             }
+        };
+
+        const triggerGoldenFry = (x, y) => {
+            stateRef.current.fries += 5;
+            setFries(stateRef.current.fries);
+            sfx.coin();
+            setTimeout(() => sfx.coin(), 120);
+            const id = Date.now() + Math.random();
+            setPops((p) => [...p, { id, x, y, text: "+5 ⭐🍟", golden: true }]);
+            setTimeout(() => setPops((p) => p.filter((q) => q.id !== id)), 1300);
+            spawnSparkles(x, y, true);
+            showAngelQuote("GOLDEN FRY!");
+            // Slow-motion effect
+            slowMoRef.current = true;
+            setSlowMo(true);
+            setTimeout(() => {
+                slowMoRef.current = false;
+                setSlowMo(false);
+            }, 1500);
         };
 
         const spawn = () => {
@@ -432,9 +502,10 @@ export default function Game() {
                 // Leave at least one lane open if 2 obstacles
                 if (usedLanes.size >= 3) break;
 
-                const isFry = Math.random() < 0.35;
+                const r = Math.random();
                 let type;
-                if (isFry) type = "fry";
+                if (r < 0.04) type = "golden_fry";
+                else if (r < 0.38) type = "fry";
                 else type = OBSTACLE_TYPES[Math.floor(Math.random() * OBSTACLE_TYPES.length)];
 
                 entitiesRef.current.push({
@@ -453,9 +524,10 @@ export default function Game() {
             const s = stateRef.current;
             if (!s.running) return;
 
-            // Speed up over time
+            // Speed up over time (slow-motion halves movement)
             s.speed = Math.min(13, s.speed + 0.00025 * dt);
-            const dy = s.speed * (dt / 16.67);
+            const slowFactor = slowMoRef.current ? 0.35 : 1;
+            const dy = s.speed * (dt / 16.67) * slowFactor;
 
             // Road scroll
             s.roadOffset = (s.roadOffset + dy) % 1000;
@@ -490,6 +562,10 @@ export default function Game() {
                     if (dy2 < playerHalfH + 30) {
                         if (e.type === "fry") {
                             triggerFry(e.x, e.y);
+                            ents.splice(i, 1);
+                            continue;
+                        } else if (e.type === "golden_fry") {
+                            triggerGoldenFry(e.x, e.y);
                             ents.splice(i, 1);
                             continue;
                         } else {
@@ -549,7 +625,7 @@ export default function Game() {
     const playerX = LANES[lane] * shellWidth;
 
     return (
-        <div ref={shellRef} className={`game-shell ${shellShake ? "shake" : ""}`} data-testid="game-shell">
+        <div ref={shellRef} className={`game-shell ${shellShake ? "shake" : ""} ${slowMo ? "slow-mo" : ""}`} data-testid="game-shell">
             {/* Road */}
             <div ref={roadRef} className="road" data-testid="road" />
             <div className="siren" />
@@ -558,22 +634,52 @@ export default function Game() {
             {screen === "playing" && entitiesRef.current.map((e) => {
                 let style = { left: e.x, top: e.y, transform: "translate(-50%, -50%)" };
                 let w = 56, h = 56;
+                let extraClass = "";
+                let src = IMG[e.type];
                 if (e.type === "civilian") { w = 64; h = 100; }
                 else if (e.type === "barrier") { w = 90; h = 30; }
                 else if (e.type === "cone") { w = 48; h = 60; }
-                else if (e.type === "fry") { w = 46; h = 60; }
+                else if (e.type === "fry") { w = 46; h = 60; extraClass = "fry-glow"; src = IMG.fry; }
+                else if (e.type === "golden_fry") { w = 56; h = 72; extraClass = "fry-glow is-golden"; src = IMG.fry; }
                 style.width = w; style.height = h;
                 return (
-                    <img
-                        key={e.id}
-                        src={IMG[e.type]}
-                        alt={e.type}
-                        className="sprite"
-                        style={style}
-                        draggable={false}
-                    />
+                    <div key={e.id} className={`sprite ${extraClass}`} style={style}>
+                        <img
+                            src={src}
+                            alt={e.type}
+                            className="sprite-img"
+                            style={{ width: "100%", height: "100%" }}
+                            draggable={false}
+                        />
+                    </div>
                 );
             })}
+
+            {/* Tire skid marks */}
+            {screen === "playing" && skids.map((s) => (
+                <div key={s.id} className="skid" style={{ left: s.x }}>
+                    <div className="skid-streak skid-streak--l" />
+                    <div className="skid-streak skid-streak--r" />
+                </div>
+            ))}
+
+            {/* Sparkles when collecting fries */}
+            {sparkles.map((sp) => (
+                <div key={sp.id} className={`sparkle-burst ${sp.golden ? "is-golden" : ""}`} style={{ left: sp.x, top: sp.y }}>
+                    {sp.parts.map((p) => (
+                        <span
+                            key={p.k}
+                            className="spark"
+                            style={{
+                                transform: `translate(-50%, -50%) rotate(${(p.angle * 180) / Math.PI}deg)`,
+                                "--dist": `${p.dist}px`,
+                            }}
+                        >
+                            {sp.golden ? "✦" : "✦"}
+                        </span>
+                    ))}
+                </div>
+            ))}
 
             {/* Police car */}
             {screen === "playing" && (
@@ -612,7 +718,9 @@ export default function Game() {
 
             {/* Fry pop-up score */}
             {pops.map((p) => (
-                <div key={p.id} className="fry-pop" style={{ left: p.x, top: p.y }}>+1 🍟</div>
+                <div key={p.id} className={`fry-pop ${p.golden ? "is-golden" : ""}`} style={{ left: p.x, top: p.y }}>
+                    {p.text || "+1 🍟"}
+                </div>
             ))}
 
             {/* HUD */}
