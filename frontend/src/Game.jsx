@@ -88,11 +88,68 @@ function IntroScreen({ onContinue }) {
     );
 }
 
-// ---------- Ticket Game Over ----------
-function GameOverTicket({ distance, fries, onRestart, onTitle }) {
-    const fine = (distance * 7 + fries * 12).toLocaleString();
+// ---------- Caught Cutscene ----------
+function CaughtCutscene({ onDone }) {
+    const [step, setStep] = useState(0); // 0: officer walking, 1: pause, 2: speech, 3: fade
+    useEffect(() => {
+        const t1 = setTimeout(() => setStep(1), 1100); // arrived
+        const t2 = setTimeout(() => setStep(2), 1700); // speak
+        const t3 = setTimeout(() => setStep(3), 5200); // fade
+        const t4 = setTimeout(() => onDone(), 5900);
+        return () => [t1, t2, t3, t4].forEach(clearTimeout);
+    }, [onDone]);
+
     return (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
+        <div
+            data-testid="caught-cutscene"
+            className={`absolute inset-0 z-50 overflow-hidden bg-gradient-to-b from-slate-900 via-slate-800 to-slate-950 ${step >= 3 ? "cutscene-fade" : ""}`}
+        >
+            {/* spotlight on Angel's car */}
+            <div className="cutscene-spotlight" />
+
+            {/* Red/blue strobes from off-screen police car */}
+            <div className="cutscene-strobe" />
+
+            {/* Angel's car parked */}
+            <div className="cutscene-car">
+                <img
+                    src={IMG.player}
+                    alt="Angel's car"
+                    className="cutscene-car-img"
+                    draggable={false}
+                />
+                {/* Angel's hand holding one last fry */}
+                <div className="cutscene-fry" aria-hidden>🍟</div>
+            </div>
+
+            {/* Officer walking up */}
+            <div className={`cutscene-officer ${step >= 1 ? "is-arrived" : ""}`} data-testid="cutscene-officer">
+                <span className="cutscene-officer-emoji">👮‍♀️</span>
+            </div>
+
+            {/* Speech bubble */}
+            {step >= 2 && (
+                <div className="cutscene-speech" data-testid="cutscene-speech">
+                    <div className="cutscene-speech-tail" />
+                    <div className="cutscene-speech-eyebrow">Officer Mendez</div>
+                    <p>
+                        “Ma'am… you caused a <b>14 car pileup</b> for potatoes.”
+                    </p>
+                </div>
+            )}
+
+            {/* Bottom caption */}
+            <div className="cutscene-caption">
+                <span>SCENE — Roadside, 11:47 PM</span>
+            </div>
+        </div>
+    );
+}
+
+// ---------- Ticket Game Over ----------
+function GameOverTicket({ distance, fries, dodged, onRestart, onTitle }) {
+    return (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center p-6 bg-black/80 backdrop-blur-sm overflow-y-auto py-6">
             <div className="ticket" data-testid="ticket-modal">
                 <div className="flex justify-center mb-2">
                     <span className="badge">CITY POLICE • CITATION</span>
@@ -102,11 +159,19 @@ function GameOverTicket({ distance, fries, onRestart, onTitle }) {
                     Issued to: Angel, Stunt Driver
                 </div>
 
-                <div className="row"><span>Offense</span><b>Fry-ving u/ influence</b></div>
-                <div className="row"><span>Distance Fled</span><b data-testid="ticket-distance">{distance} m</b></div>
-                <div className="row"><span>Fries Hoarded</span><b data-testid="ticket-fries">{fries} 🍟</b></div>
-                <div className="row"><span>Witnesses</span><b>1 Happy Meal</b></div>
-                <div className="row"><span>Fine Amount</span><b>${fine}</b></div>
+                <div className="ticket-section-label">CHARGES</div>
+                <ul className="ticket-charges" data-testid="ticket-charges">
+                    <li>Stunt Driving</li>
+                    <li>Dangerous Fry Recovery</li>
+                    <li>Vehicular Potato Endangerment</li>
+                    <li>Excessive Emotional Attachment to Fries</li>
+                </ul>
+
+                <div className="ticket-section-label">FINAL STATS</div>
+                <div className="row"><span>Fries Saved</span><b data-testid="ticket-fries">{fries} 🍟</b></div>
+                <div className="row"><span>Distance Escaped</span><b data-testid="ticket-distance">{distance} m</b></div>
+                <div className="row"><span>Police Cars Dodged</span><b data-testid="ticket-dodged">{dodged}</b></div>
+                <div className="row"><span>Lessons Learned</span><b data-testid="ticket-lessons">0</b></div>
 
                 <div className="text-center text-[10px] mt-3 text-gray-600 italic">
                     *Officer's notes: "She just really wanted that fry."
@@ -115,10 +180,10 @@ function GameOverTicket({ distance, fries, onRestart, onTitle }) {
 
             <div className="flex gap-3 mt-7">
                 <button data-testid="restart-button" className="btn-arcade text-lg" onClick={onRestart}>
-                    Pay Fine & Retry
+                    Try Again
                 </button>
                 <button data-testid="title-button" className="btn-arcade-secondary text-sm" onClick={onTitle}>
-                    Title
+                    Main Menu
                 </button>
             </div>
         </div>
@@ -127,11 +192,12 @@ function GameOverTicket({ distance, fries, onRestart, onTitle }) {
 
 // ---------- Main Game ----------
 export default function Game() {
-    const [screen, setScreen] = useState("title"); // title | intro | playing | gameover
+    const [screen, setScreen] = useState("title"); // title | intro | playing | caught | gameover
     const [lane, setLane] = useState(1);
     const [distance, setDistance] = useState(0);
     const [fries, setFries] = useState(0);
     const [hits, setHits] = useState(0);
+    const [dodged, setDodged] = useState(0);
     const [radio, setRadio] = useState(EARLY_INTRO_LINES[0]);
     const [shellShake, setShellShake] = useState(false);
     const [flashes, setFlashes] = useState([]);
@@ -151,6 +217,7 @@ export default function Game() {
         hits: 0,
         fries: 0,
         distance: 0,
+        dodged: 0,
     });
     const [, forceRender] = useState(0);
 
@@ -283,7 +350,8 @@ export default function Game() {
                     distance: stateRef.current.distance,
                     fries: stateRef.current.fries,
                 }).catch(() => {});
-                setScreen("gameover");
+                // Trigger caught cutscene before ticket
+                setScreen("caught");
             }
         };
 
@@ -378,7 +446,14 @@ export default function Game() {
                         }
                     }
                 }
-                if (e.y > height + 120) ents.splice(i, 1);
+                if (e.y > height + 120) {
+                    // count cars successfully dodged (passed off-screen without hitting)
+                    if (e.type === "civilian") {
+                        s.dodged += 1;
+                        setDodged(s.dodged);
+                    }
+                    ents.splice(i, 1);
+                }
             }
 
             // Radio chatter every ~5-6s
@@ -526,10 +601,14 @@ export default function Game() {
             {screen === "intro" && (
                 <IntroScreen onContinue={startGame} />
             )}
+            {screen === "caught" && (
+                <CaughtCutscene onDone={() => setScreen("gameover")} />
+            )}
             {screen === "gameover" && (
                 <GameOverTicket
                     distance={distance}
                     fries={fries}
+                    dodged={dodged}
                     onRestart={startGame}
                     onTitle={() => setScreen("title")}
                 />

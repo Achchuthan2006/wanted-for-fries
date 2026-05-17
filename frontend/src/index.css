@@ -320,3 +320,180 @@ body {
     from { transform: translate(-50%, 0); opacity: 1; }
     to   { transform: translate(-50%, -40px); opacity: 0; }
 }
+
+/* ----- Caught cutscene ----- */
+.cutscene-spotlight {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 280px 200px at 35% 75%, rgba(255,220,140,0.35), transparent 70%),
+        radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.55) 100%);
+    pointer-events: none;
+}
+.cutscene-strobe {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse 320px 220px at 100% 110%, rgba(0,90,255,0.45), transparent 65%),
+        radial-gradient(ellipse 320px 220px at 0% 110%, rgba(255,40,40,0.45), transparent 65%);
+    mix-blend-mode: screen;
+    animation: stbobe 0.45s steps(2) infinite;
+}
+@keyframes stbobe {
+    0%, 49% { opacity: 0.65; }
+    50%, 100% { opacity: 1; }
+}
+.cutscene-car {
+    position: absolute;
+    left: 50%;
+    bottom: 18%;
+    transform: translateX(-50%) rotate(-3deg);
+    width: 120px;
+    filter: drop-shadow(0 18px 18px rgba(0,0,0,0.55));
+    animation: idle-jiggle 1.3s ease-in-out infinite alternate;
+}
+.cutscene-car-img {
+    width: 100%;
+    display: block;
+}
+@keyframes idle-jiggle {
+    from { transform: translateX(-50%) rotate(-3deg) translateY(0); }
+    to   { transform: translateX(-50%) rotate(-3deg) translateY(-2px); }
+}
+.cutscene-fry {
+    position: absolute;
+    top: 8%;
+    left: 22%;
+    font-size: 28px;
+    transform: rotate(-25deg);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    animation: trembling 0.9s ease-in-out infinite alternate;
+}
+@keyframes trembling {
+    from { transform: rotate(-25deg) translate(0, 0); }
+    to   { transform: rotate(-18deg) translate(2px, -2px); }
+}
+.cutscene-officer {
+    position: absolute;
+    bottom: 16%;
+    right: -100px;
+    font-size: 88px;
+    filter: drop-shadow(0 8px 10px rgba(0,0,0,0.6));
+    transition: right 1.1s cubic-bezier(.22,.61,.36,1);
+    z-index: 5;
+}
+.cutscene-officer.is-arrived { right: 26%; }
+.cutscene-officer-emoji {
+    display: inline-block;
+    animation: walk-bob 0.35s steps(2) infinite;
+}
+@keyframes walk-bob {
+    0%, 100% { transform: translateY(0) rotate(-3deg); }
+    50%      { transform: translateY(-5px) rotate(3deg); }
+}
+.cutscene-officer.is-arrived .cutscene-officer-emoji {
+    animation: none;
+    transform: none;
+}
+.cutscene-speech {
+    position: absolute;
+    top: 14%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #FEF3C7;
+    color: #111827;
+    border: 3px solid #111827;
+    border-radius: 14px;
+    padding: 12px 14px;
+    max-width: 86%;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    line-height: 1.35;
+    animation: speech-in 0.35s ease-out;
+    z-index: 8;
+}
+.cutscene-speech p { margin: 0; }
+.cutscene-speech b { color: #DA291C; }
+.cutscene-speech-tail {
+    position: absolute;
+    right: 14%;
+    bottom: -12px;
+    width: 0; height: 0;
+    border: 12px solid transparent;
+    border-top-color: #111827;
+}
+.cutscene-speech-tail::after {
+    content: "";
+    position: absolute;
+    left: -9px;
+    top: -14px;
+    width: 0; height: 0;
+    border: 9px solid transparent;
+    border-top-color: #FEF3C7;
+}
+.cutscene-speech-eyebrow {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #DA291C;
+    margin-bottom: 4px;
+}
+@keyframes speech-in {
+    from { transform: translateX(-50%) scale(0.6); opacity: 0; }
+    to   { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+.cutscene-caption {
+    position: absolute;
+    bottom: 10px;
+    left: 0; right: 0;
+    text-align: center;
+    color: #fbbf24;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0.8;
+}
+.cutscene-fade {
+    animation: fadeout 0.7s ease-in forwards;
+}
+@keyframes fadeout {
+    to { opacity: 0; }
+}
+
+/* ----- Ticket additions ----- */
+.ticket-section-label {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: #DA291C;
+    text-transform: uppercase;
+    margin: 10px 0 4px;
+    border-bottom: 2px solid #111827;
+    padding-bottom: 2px;
+}
+.ticket-charges {
+    list-style: none;
+    padding: 0;
+    margin: 4px 0 8px;
+    font-size: 13px;
+}
+.ticket-charges li {
+    padding: 4px 0;
+    border-bottom: 1px dashed #9ca3af;
+    position: relative;
+    padding-left: 22px;
+}
+.ticket-charges li::before {
+    content: "✗";
+    position: absolute;
+    left: 6px;
+    color: #DA291C;
+    font-weight: 900;
+}
