@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import axios from "axios";
-import { sfx, unlockAudio } from "./sounds";
+import { sfx, unlockAudio, getMusic } from "./sounds";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -589,6 +589,15 @@ export default function Game() {
 
     const startGame = () => {
         unlockAudio();
+        const music = getMusic();
+        if (music) {
+            music.stop();
+            music.setIntensity(0);
+            music.start();
+            music.startSiren();
+        }
+        // Dramatic bass drop at chase start
+        sfx.bassDrop();
         // Reset
         entitiesRef.current = [];
         stateRef.current = {
@@ -658,6 +667,7 @@ export default function Game() {
             stateRef.current.lane = next;
             setLane(next);
             sfx.swerve();
+            sfx.skid();
             // Tire skid at OLD lane
             const shellW = shellRef.current?.clientWidth || 380;
             const shellH = shellRef.current?.clientHeight || 800;
@@ -797,6 +807,11 @@ export default function Game() {
             if (stateRef.current.hits >= MAX_HITS) {
                 stateRef.current.running = false;
                 sfx.gameover();
+                const music = getMusic();
+                if (music) {
+                    music.stopHeartbeat();
+                    music.stop();
+                }
                 // Persist score
                 axios.post(`${API}/scores`, {
                     player: "Angel",
@@ -805,6 +820,10 @@ export default function Game() {
                 }).catch(() => {});
                 // Trigger caught cutscene before ticket
                 setScreen("caught");
+            } else if (stateRef.current.hits >= 2) {
+                // Low health → heartbeat starts
+                const music = getMusic();
+                if (music) music.startHeartbeat();
             }
         };
 
@@ -1051,6 +1070,8 @@ export default function Game() {
                         { id: busId, kind: "bus", side: "cross", y: -60, content: "🚌" },
                     ]);
                     showEventBanner("🚌 BUS CROSSING!");
+                    sfx.horn();
+                    setTimeout(() => sfx.horn(), 600);
                 } else {
                     // CONSTRUCTION ZONE — burst of cones + barriers
                     showEventBanner("🚧 CONSTRUCTION ZONE!");
@@ -1151,11 +1172,11 @@ export default function Game() {
                     now - lastNearMissRef.current > 1500
                 ) {
                     lastNearMissRef.current = now;
+                    if (e.type === "civilian") sfx.horn();
                     // Brief slow-mo for cinematic near-miss
                     slowMoRef.current = true;
                     setSlowMo(true);
                     setTimeout(() => {
-                        // Only clear if not a golden-fry slow-mo took over
                         slowMoRef.current = false;
                         setSlowMo(false);
                     }, 220);
@@ -1186,10 +1207,17 @@ export default function Game() {
         raf = requestAnimationFrame(loop);
         // Initial radio fetch after small delay
         const initT = setTimeout(() => fetchRadio(), 1200);
-        // Siren ambience loop
-        const sirenLoop = setInterval(() => {
-            if (stateRef.current.running) sfx.siren();
-        }, 3500);
+        // Music intensity scheduler (every 1.2s)
+        const intensityLoop = setInterval(() => {
+            const music = getMusic();
+            if (!music) return;
+            const s = stateRef.current;
+            let lvl = 0;
+            if (s.distance > 40)   lvl = 1;
+            if (s.distance > 600)  lvl = 2;
+            if (frenzyRef.current) lvl = 3;
+            music.setIntensity(lvl);
+        }, 1200);
         // Angel's idle quotes — every ~9s
         const angelLoop = setInterval(() => {
             if (stateRef.current.running) {
@@ -1200,8 +1228,15 @@ export default function Game() {
         return () => {
             cancelAnimationFrame(raf);
             clearTimeout(initT);
-            clearInterval(sirenLoop);
+            clearInterval(intensityLoop);
             clearInterval(angelLoop);
+            // Stop music + siren when leaving playing state
+            const music = getMusic();
+            if (music) {
+                music.stop();
+                music.stopHeartbeat();
+                music.stopSiren();
+            }
         };
     }, [screen, fetchRadio, showAngelQuote]);
 
