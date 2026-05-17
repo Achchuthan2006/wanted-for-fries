@@ -538,6 +538,11 @@ export default function Game() {
     const [turbo, setTurbo] = useState(false);
     const [policePanic, setPolicePanic] = useState(false);
     const [trail, setTrail] = useState([]); // {id, x, y, color}
+    const [smokes, setSmokes] = useState([]); // {id, x, y}
+    const [tiltDir, setTiltDir] = useState(0); // -1 left, 0 none, 1 right
+    const [isFast, setIsFast] = useState(false);
+    const tiltTimerRef = useRef(null);
+    const lastNearMissRef = useRef(0);
 
     // World + weather + events
     const [weather, setWeather] = useState("sunny"); // sunny | sunset | night | rain
@@ -622,6 +627,10 @@ export default function Game() {
         turboEndAtRef.current = 0;
         setPolicePanic(false);
         setTrail([]);
+        setSmokes([]);
+        setTiltDir(0);
+        setIsFast(false);
+        lastNearMissRef.current = 0;
         // World resets
         setWeather("sunny");
         weatherRef.current = "sunny";
@@ -649,14 +658,32 @@ export default function Game() {
             stateRef.current.lane = next;
             setLane(next);
             sfx.swerve();
-            // Tire skid mark at the OLD lane position
+            // Tire skid at OLD lane
             const shellW = shellRef.current?.clientWidth || 380;
+            const shellH = shellRef.current?.clientHeight || 800;
             const skidId = Date.now() + Math.random();
             const skidX = LANES[prevLane] * shellW;
             setSkids((arr) => [...arr.slice(-6), { id: skidId, x: skidX, dir }]);
             setTimeout(() => {
                 setSkids((arr) => arr.filter((s) => s.id !== skidId));
             }, 900);
+            // Tire smoke puffs (2 puffs at the old lane)
+            const puffY = shellH - 110;
+            for (let p = 0; p < 2; p++) {
+                const sid = Date.now() + Math.random();
+                const offset = (p === 0 ? -1 : 1) * 14;
+                setSmokes((arr) => [
+                    ...arr.slice(-10),
+                    { id: sid, x: skidX + offset, y: puffY + Math.random() * 10 }
+                ]);
+                setTimeout(() => {
+                    setSmokes((arr) => arr.filter((q) => q.id !== sid));
+                }, 700);
+            }
+            // Camera tilt
+            setTiltDir(dir);
+            if (tiltTimerRef.current) clearTimeout(tiltTimerRef.current);
+            tiltTimerRef.current = setTimeout(() => setTiltDir(0), 260);
         }
     }, []);
 
@@ -927,6 +954,10 @@ export default function Game() {
             if (frenzyRef.current) multiplier *= 1.30;
             const dy = s.speed * (dt / 16.67) * multiplier;
 
+            // High-speed mode (motion blur + speed lines)
+            const wantsFast = (s.speed * multiplier) >= 9 || turboRef.current || frenzyRef.current;
+            if (wantsFast !== isFast) setIsFast(wantsFast);
+
             // Combo timer countdown
             if (comboRef.current > 0) {
                 comboTimerRef.current -= dt;
@@ -1111,6 +1142,23 @@ export default function Game() {
                             continue;
                         }
                     }
+                } else if (
+                    // Near-miss: obstacle in ADJACENT lane very close to player Y
+                    Math.abs(e.laneIdx - s.lane) === 1 &&
+                    e.type !== "fry" && e.type !== "golden_fry" &&
+                    Math.abs(e.y - playerY) < 38 &&
+                    !slowMoRef.current &&
+                    now - lastNearMissRef.current > 1500
+                ) {
+                    lastNearMissRef.current = now;
+                    // Brief slow-mo for cinematic near-miss
+                    slowMoRef.current = true;
+                    setSlowMo(true);
+                    setTimeout(() => {
+                        // Only clear if not a golden-fry slow-mo took over
+                        slowMoRef.current = false;
+                        setSlowMo(false);
+                    }, 220);
                 }
                 if (e.y > height + 120) {
                     // count cars successfully dodged (passed off-screen without hitting)
@@ -1162,7 +1210,7 @@ export default function Game() {
     const playerX = LANES[lane] * shellWidth;
 
     return (
-        <div ref={shellRef} className={`game-shell weather-${weather} ${shellShake ? "shake" : ""} ${slowMo ? "slow-mo" : ""} ${frenzy ? "frenzy" : ""} ${turbo ? "turbo" : ""}`} data-testid="game-shell">
+        <div ref={shellRef} className={`game-shell weather-${weather} ${shellShake ? "shake" : ""} ${slowMo ? "slow-mo" : ""} ${frenzy ? "frenzy" : ""} ${turbo ? "turbo" : ""} ${isFast ? "is-fast" : ""} ${tiltDir === -1 ? "tilt-left" : ""} ${tiltDir === 1 ? "tilt-right" : ""}`} data-testid="game-shell">
             {/* Road */}
             <div ref={roadRef} className="road" data-testid="road" />
 
@@ -1231,6 +1279,23 @@ export default function Game() {
                     <div className="skid-streak skid-streak--r" />
                 </div>
             ))}
+
+            {/* Tire smoke puffs */}
+            {smokes.map((s) => (
+                <div key={s.id} className="tire-smoke" style={{ left: s.x, top: s.y }} />
+            ))}
+
+            {/* Speed-line overlay (high speed / frenzy / turbo) */}
+            {isFast && screen === "playing" && (
+                <div className="speedlines" aria-hidden>
+                    <span style={{ left: "8%",  animationDelay: "0s"   }} />
+                    <span style={{ left: "22%", animationDelay: "0.12s" }} />
+                    <span style={{ left: "38%", animationDelay: "0.05s" }} />
+                    <span style={{ left: "58%", animationDelay: "0.2s"  }} />
+                    <span style={{ left: "72%", animationDelay: "0.08s" }} />
+                    <span style={{ left: "88%", animationDelay: "0.16s" }} />
+                </div>
+            )}
 
             {/* Sparkles when collecting fries */}
             {sparkles.map((sp) => (
@@ -1314,11 +1379,11 @@ export default function Game() {
                     <div className="absolute top-3 left-3 z-30 flex flex-col gap-2" data-testid="hud">
                         <div className="hud-pill" data-testid="hud-distance">
                             <span className="text-white/70 text-[10px] uppercase">Dist</span>
-                            <span>{distance}m</span>
+                            <span className="hud-num">{distance}m</span>
                         </div>
                         <div className="hud-pill" data-testid="hud-fries">
                             <span>🍟</span>
-                            <span>{fries}</span>
+                            <span key={fries} className="hud-num hud-num--bounce">{fries}</span>
                         </div>
                         {combo >= 2 && (
                             <div className={`hud-pill hud-combo ${frenzy ? "is-frenzy" : ""}`} data-testid="hud-combo">
