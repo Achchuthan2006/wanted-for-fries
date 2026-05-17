@@ -20,6 +20,27 @@ const EARLY_INTRO_LINES = [
     "This driver is either highly trained or highly confused!",
 ];
 
+// Angel's personal lines — cheerful, innocent, dramatic
+const ANGEL_LINES = {
+    fry: [
+        "No fry left behind!",
+        "I can still save it!",
+        "This is still edible!",
+    ],
+    hit: [
+        "They don't understand!",
+        "I paid for LARGE fries!",
+    ],
+    idle: [
+        "No fry left behind!",
+        "I can still save it!",
+        "This is still edible!",
+        "They don't understand!",
+        "I paid for LARGE fries!",
+    ],
+};
+const pickLine = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
 const LANES = [0.22, 0.5, 0.78]; // left, center, right (% of width)
 const MAX_HITS = 3;
 const OBSTACLE_TYPES = ["cone", "barrier", "civilian", "civilian"];
@@ -148,6 +169,11 @@ function CaughtCutscene({ onDone }) {
 
 // ---------- Ticket Game Over ----------
 function GameOverTicket({ distance, fries, dodged, onRestart, onTitle }) {
+    const [showSecret, setShowSecret] = useState(false);
+    useEffect(() => {
+        const t = setTimeout(() => setShowSecret(true), 1300);
+        return () => clearTimeout(t);
+    }, []);
     return (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center p-6 bg-black/80 backdrop-blur-sm overflow-y-auto py-6">
             <div className="ticket" data-testid="ticket-modal">
@@ -186,6 +212,16 @@ function GameOverTicket({ distance, fries, dodged, onRestart, onTitle }) {
                     Main Menu
                 </button>
             </div>
+
+            {showSecret && (
+                <div className="secret-ending" data-testid="secret-ending">
+                    <span className="secret-sparkle" aria-hidden>✨🍟✨</span>
+                    <p>
+                        Made for <b>Angel</b>, the original stunt driver.
+                    </p>
+                    <span className="secret-heart" aria-hidden>♥</span>
+                </div>
+            )}
         </div>
     );
 }
@@ -202,6 +238,7 @@ export default function Game() {
     const [shellShake, setShellShake] = useState(false);
     const [flashes, setFlashes] = useState([]);
     const [pops, setPops] = useState([]);
+    const [angelQuote, setAngelQuote] = useState(null); // {id, text}
 
     const shellRef = useRef(null);
     const roadRef = useRef(null);
@@ -239,11 +276,14 @@ export default function Game() {
             hits: 0,
             fries: 0,
             distance: 0,
+            dodged: 0,
         };
         setLane(1);
         setDistance(0);
         setFries(0);
         setHits(0);
+        setDodged(0);
+        setAngelQuote(null);
         setRadio(EARLY_INTRO_LINES[Math.floor(Math.random() * EARLY_INTRO_LINES.length)]);
         setScreen("playing");
     };
@@ -256,6 +296,16 @@ export default function Game() {
             setLane(next);
             sfx.swerve();
         }
+    }, []);
+
+    const angelTimerRef = useRef(null);
+    const showAngelQuote = useCallback((text) => {
+        const id = Date.now() + Math.random();
+        setAngelQuote({ id, text });
+        if (angelTimerRef.current) clearTimeout(angelTimerRef.current);
+        angelTimerRef.current = setTimeout(() => {
+            setAngelQuote((q) => (q && q.id === id ? null : q));
+        }, 2000);
     }, []);
 
     // Fetch radio line from backend
@@ -362,6 +412,10 @@ export default function Game() {
             const id = Date.now() + Math.random();
             setPops((p) => [...p, { id, x, y }]);
             setTimeout(() => setPops((p) => p.filter((q) => q.id !== id)), 700);
+            // Angel celebrates every few fries
+            if (Math.random() < 0.55) {
+                showAngelQuote(pickLine(ANGEL_LINES.fry));
+            }
         };
 
         const spawn = () => {
@@ -475,13 +529,20 @@ export default function Game() {
         const sirenLoop = setInterval(() => {
             if (stateRef.current.running) sfx.siren();
         }, 3500);
+        // Angel's idle quotes — every ~9s
+        const angelLoop = setInterval(() => {
+            if (stateRef.current.running) {
+                showAngelQuote(pickLine(ANGEL_LINES.idle));
+            }
+        }, 9000);
 
         return () => {
             cancelAnimationFrame(raf);
             clearTimeout(initT);
             clearInterval(sirenLoop);
+            clearInterval(angelLoop);
         };
-    }, [screen, fetchRadio]);
+    }, [screen, fetchRadio, showAngelQuote]);
 
     // Compute player x for render
     const shellWidth = shellRef.current?.clientWidth || 380;
@@ -535,6 +596,18 @@ export default function Game() {
                     draggable={false}
                     data-testid="player-car"
                 />
+            )}
+
+            {/* Angel's quote bubble over the player car */}
+            {screen === "playing" && angelQuote && (
+                <div
+                    key={angelQuote.id}
+                    className="angel-quote"
+                    style={{ left: playerX }}
+                    data-testid="angel-quote"
+                >
+                    {angelQuote.text}
+                </div>
             )}
 
             {/* Fry pop-up score */}

@@ -497,3 +497,98 @@ body {
     color: #DA291C;
     font-weight: 900;
 }
+
+/* ----- Angel's quote bubble (in-game) ----- */
+.angel-quote {
+    position: absolute;
+    bottom: 210px;
+    transform: translateX(-50%);
+    background: #FEF3C7;
+    color: #111827;
+    border: 2.5px solid #111827;
+    border-radius: 14px;
+    padding: 6px 12px;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    line-height: 1.2;
+    white-space: nowrap;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.45);
+    z-index: 36;
+    pointer-events: none;
+    animation: angel-bubble 2s ease-out forwards;
+}
+.angel-quote::after {
+    content: "";
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border: 8px solid transparent;
+    border-top-color: #111827;
+}
+.angel-quote::before {
+    content: "";
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border: 6px solid transparent;
+    border-top-color: #FEF3C7;
+    z-index: 1;
+}
+@keyframes angel-bubble {
+    0%   { transform: translateX(-50%) scale(0.4); opacity: 0; }
+    15%  { transform: translateX(-50%) scale(1.1); opacity: 1; }
+    25%  { transform: translateX(-50%) scale(1); }
+    85%  { transform: translateX(-50%) scale(1); opacity: 1; }
+    100% { transform: translateX(-50%) scale(0.9) translateY(-10px); opacity: 0; }
+}
+
+/* ----- Secret ending under the ticket ----- */
+.secret-ending {
+    margin-top: 22px;
+    padding: 12px 18px;
+    background: rgba(0,0,0,0.4);
+    border: 1.5px dashed #FFC72C;
+    border-radius: 14px;
+    color: #FFE899;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    text-align: center;
+    letter-spacing: 0.02em;
+    max-width: 320px;
+    animation: secret-fade 1.4s ease-out;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+}
+.secret-ending p { margin: 0; }
+.secret-ending b { color: #FFC72C; }
+.secret-sparkle {
+    animation: sparkle 1.8s ease-in-out infinite;
+    font-size: 14px;
+}
+.secret-heart {
+    color: #ef4444;
+    font-size: 16px;
+    animation: heartbeat 1s ease-in-out infinite;
+}
+@keyframes secret-fade {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes sparkle {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.55; transform: scale(1.15); }
+}
+@keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    25%      { transform: scale(1.25); }
+    50%      { transform: scale(1); }
+    75%      { transform: scale(1.15); }
+}
