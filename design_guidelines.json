@@ -1,0 +1,106 @@
+{
+  "theme_and_archetype": {
+    "domain": "Arcade Game",
+    "theme": "LIGHT",
+    "archetype": "6 (Vibrant Play)",
+    "description": "Bright, funny, colorful, mobile-friendly 2D arcade style. High energy, cartoonish, chaotic humor.",
+    "emotional_tone": "Playful, Frantic, Funny"
+  },
+  "colors": {
+    "primary": "#FFC72C", 
+    "secondary": "#DA291C",
+    "accent_blue": "#005A9C",
+    "background_dark": "#1F2937",
+    "road_asphalt": "#333333",
+    "lane_marker": "#FACC15",
+    "text_dark": "#111827",
+    "text_light": "#FFFFFF"
+  },
+  "typography": {
+    "heading_font": "Fredoka, sans-serif",
+    "body_font": "Nunito, sans-serif",
+    "mono_font": "JetBrains Mono, monospace",
+    "rules": {
+      "h1": "text-5xl md:text-6xl font-black tracking-tight uppercase text-yellow-400 drop-shadow-[0_4px_0_rgba(218,41,28,1)]",
+      "h2": "text-3xl md:text-4xl font-bold tracking-tight",
+      "h3": "text-xl md:text-2xl font-bold",
+      "body": "text-base md:text-lg leading-relaxed font-semibold",
+      "ui_text": "text-sm md:text-base font-black tracking-wider uppercase"
+    }
+  },
+  "spacing_and_layout": {
+    "container": "relative w-full h-full max-w-md mx-auto overflow-hidden bg-gray-900 sm:h-[800px] sm:my-8 sm:rounded-[3rem] sm:border-[12px] sm:border-gray-800 shadow-2xl",
+    "overlay": "absolute inset-0 z-50 flex flex-col items-center justify-center p-6 bg-black/60 backdrop-blur-sm",
+    "hud": "absolute top-0 left-0 right-0 p-4 z-40 flex justify-between items-start pointer-events-none"
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-[#FFC72C] text-[#DA291C] font-black text-2xl py-4 px-8 rounded-full border-b-8 border-[#DA291C] active:border-b-0 active:translate-y-2 transition-all hover:scale-105 shadow-xl uppercase cursor-pointer"
+    },
+    "panels": {
+      "ticket_modal": "bg-[#FEF3C7] text-gray-900 p-6 sm:p-8 rounded-lg border-4 border-dashed border-gray-400 shadow-2xl w-11/12 max-w-sm transform -rotate-2 relative",
+      "radio_box": "bg-gray-900/90 border-2 border-blue-500 text-blue-400 p-3 rounded-xl shadow-lg w-48 text-xs font-mono absolute top-20 right-4 animate-pulse pointer-events-none"
+    }
+  },
+  "game_ui_specifics": {
+    "start_screen": "Vibrant logo layout. Use 'Wanted for Fries' in big yellow text with red stroke/shadow. Subtitle 'Angel: The Stunt Driver'. Tagline 'Based on a true fry-related incident.'",
+    "intro_story": "A small overlay modal with a comic-style brief: 'Angel dropped a fry... stepped on the gas to reach it... now the cops are everywhere!'",
+    "hud_elements": "Top-left: distance in meters. Below it, fries icon + count. Top-right: Pause button. Bottom: Mobile control hints (if needed).",
+    "police_radio": "Typewriter effect text. e.g., 'Suspect is evading... over a french fry?', 'Deploying barriers! She really wants that fry!'",
+    "game_over_ticket": "Style like a traffic citation. Fields: 'Offense: Fry-ving under the influence', 'Distance Fled', 'Fries Hoarded', 'Fine Amount'. Big 'Pay Fine (Restart)' button."
+  },
+  "image_urls": [
+    {
+      "category": "player_car",
+      "url": "https://static.prod-images.emergentagent.com/jobs/f6836503-9171-41cb-82ba-84c20e30f37b/images/44c2b25b890a4bf62ce4d938079f84ea50ad336efea5d8dab04ae3d93a938b37.png",
+      "description": "Red cartoon sports car (top-down view)"
+    },
+    {
+      "category": "police_car",
+      "url": "https://static.prod-images.emergentagent.com/jobs/f6836503-9171-41cb-82ba-84c20e30f37b/images/b7b450b1d49dbc9392dd76336358347391483c010d4d999683a2f8565eff1693.png",
+      "description": "Cartoon police cruiser (top-down view)"
+    },
+    {
+      "category": "road_bg",
+      "url": "https://static.prod-images.emergentagent.com/jobs/f6836503-9171-41cb-82ba-84c20e30f37b/images/419f514d17926a46dbbbf352aaa875f6102653655ae64a27af96bf7c32ec3bee.png",
+      "description": "3-lane asphalt road repeating background"
+    },
+    {
+      "category": "fries_icon",
+      "url": "https://static.prod-images.emergentagent.com/jobs/f6836503-9171-41cb-82ba-84c20e30f37b/images/4168de88d6eb27cff5a441c70c774da5dc7cb72698bd7e193a33ff3dc2eab043.png",
+      "description": "French fries box icon for HUD and collectables"
+    },
+    {
+      "category": "traffic_cone",
+      "url": "https://static.prod-images.emergentagent.com/jobs/f6836503-9171-41cb-82ba-84c20e30f37b/images/4e96c5de105a73acbc056c9b5861d1096ccbe526bebe0dbc0d29a5aac60d4b6f.png",
+      "description": "Orange traffic cone obstacle"
+    },
+    {
+      "category": "barrier",
+      "url": "https://static.prod-images.emergentagent.com/jobs/f6836503-9171-41cb-82ba-84c20e30f37b/images/8850e2b423502dff2314355df22ef905d73a0dc30ded68a778901aeaa46d8dc6.png",
+      "description": "Red and white striped road barrier obstacle"
+    },
+    {
+      "category": "civilian_car",
+      "url": "https://static.prod-images.emergentagent.com/jobs/f6836503-9171-41cb-82ba-84c20e30f37b/images/7fc8664eaa0361c1bc2f53ce3caeab361c66ad7c7b9fb096b47a15d91edebf44.png",
+      "description": "Civilian car obstacle (top-down view)"
+    },
+    {
+      "category": "ticket_bg",
+      "url": "https://static.prod-images.emergentagent.com/jobs/f6836503-9171-41cb-82ba-84c20e30f37b/images/513b21f78e255452c40be2b62a1e7d62e7e6ecc34cb70e69ca5af571cc18f718.png",
+      "description": "Police ticket background for game over modal"
+    }
+  ],
+  "instructions_to_main_agent": [
+    "Build the core gameplay loop using HTML5 Canvas or absolute positioned DOM elements for the cars, obstacles, and scrolling road.",
+    "The game should have 3 distinct lanes (Left, Center, Right). Player car smoothly transitions between lanes.",
+    "Road background should tile seamlessly vertically and scroll downwards continuously.",
+    "Implement Web Audio API for simple sound effects (coin collect, engine hum, crash, police siren).",
+    "Police car constantly sits at the bottom edge of the screen, swaying left and right menacingly, moving up slightly if player hits an obstacle.",
+    "Use 'react-fast-marquee' or simple CSS animations for the scrolling road if DOM-based.",
+    "Include touch swipe controls (touchstart/touchend) + Keyboard arrow keys.",
+    "Include data-testid attributes on all interactive elements (start-button, restart-button, game-canvas, pause-button).",
+    "AI-generated police radio text should pop up at random intervals in the 'radio_box' panel.",
+    "Ensure the game is responsive and fits within a mobile viewport constraints (max-width: 448px typically)."
+  ]
+}
