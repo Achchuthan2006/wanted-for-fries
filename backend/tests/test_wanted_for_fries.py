@@ -30,7 +30,9 @@ class TestRadio:
         assert r.status_code == 200, f"got {r.status_code}: {r.text}"
         data = r.json()
         assert "line" in data and isinstance(data["line"], str) and data["line"].strip()
-        assert "source" in data and data["source"] in ("ai", "fallback")
+        assert "source" in data and data["source"] in ("ai", "scripted", "fallback")
+        assert "stage" in data and data["stage"] in ("serious", "confused", "exhausted", "existential")
+        assert "callsign" in data and isinstance(data["callsign"], str)
         return data
 
     def test_radio_early(self, session):
@@ -56,6 +58,62 @@ class TestRadio:
     def test_radio_empty_body(self, session):
         # Should use defaults (phase=early)
         r = session.post(f"{API}/radio", json={}, timeout=30)
+    def test_radio_new_stages_supported(self, session):
+        """The 4 new emotional stages should resolve correctly."""
+        for stage in ("serious", "confused", "exhausted", "existential"):
+            r = session.post(f"{API}/radio", json={"phase": stage, "distance": 0}, timeout=30)
+            data = self._check_response(r)
+            assert data["stage"] == stage, f"expected stage={stage}, got {data['stage']}"
+
+    def test_radio_new_scripted_lines_present(self, session):
+        """User requested new funny lines must appear across many calls.
+
+        Required lines (subset across confused + exhausted):
+          - 'This pursuit is still potato-related.'
+          - 'The suspect is emotionally attached to carbohydrates.'
+          - "Dispatch... I think she's collecting them."
+          - 'Ma\\'am, PLEASE let the fry go.'
+          - 'I trained 8 years for this?'
+          - 'This is no longer about the law.'
+
+        First verify they exist in the server's SCRIPTED_LINES dict (authoritative),
+        then sample a few API calls to ensure the live deploy returns them.
+        """
+        # 1) Source-level check (fast, authoritative)
+        import sys
+        sys.path.insert(0, "/app/backend")
+        from server import SCRIPTED_LINES  # noqa: E402
+        required = {
+            "This pursuit is still potato-related.",
+            "The suspect is emotionally attached to carbohydrates.",
+            "Dispatch... I think she's collecting them.",
+            "Ma'am, PLEASE let the fry go.",
+            "I trained 8 years for this?",
+            "This is no longer about the law.",
+        }
+        all_lines = set(SCRIPTED_LINES["confused"]) | set(SCRIPTED_LINES["exhausted"])
+        missing_src = required - all_lines
+        assert not missing_src, f"Missing required lines in server SCRIPTED_LINES: {missing_src}"
+
+        # 2) Live API smoke check: ensure live endpoint actually returns at least
+        # one of the new lines across ~40 sampled calls (70% scripted rate).
+        seen_one = False
+        for stage in ("confused", "exhausted"):
+            for _ in range(20):
+                try:
+                    r = session.post(f"{API}/radio", json={"phase": stage, "distance": 0}, timeout=20)
+                except requests.exceptions.RequestException:
+                    continue
+                if r.status_code != 200:
+                    continue
+                if r.json().get("line") in required:
+                    seen_one = True
+                    break
+            if seen_one:
+                break
+        assert seen_one, "Live /api/radio did not surface any new required line across 40 calls"
+
+
         self._check_response(r)
 
 
@@ -77,7 +135,7 @@ class TestScores:
 
     def test_save_another_score(self, session):
         payload = {"player": "TEST_Angel2", "distance": 999, "fries": 5}
-        r = session.post(f"{API}/scores", json=payload, timeout=15)
+        r = session.post(f"{API}/scores", json=payload, timeout=30)
         assert r.status_code == 200
         TestScores.created_ids.append(r.json()["id"])
 

@@ -80,6 +80,10 @@ SCRIPTED_LINES = {
         "Dispatch, the suspect is screaming about a 'large'.",
         "Repeat: a large WHAT, Unit-7? Over.",
         "Wait... did she pay for those fries? Asking for legal.",
+        "This pursuit is still potato-related.",
+        "The suspect is emotionally attached to carbohydrates.",
+        "Dispatch... I think she's collecting them.",
+        "Ma'am, PLEASE let the fry go.",
     ],
     # Stage 3: Increasingly annoyed and emotionally exhausted
     "exhausted": [
@@ -98,6 +102,11 @@ SCRIPTED_LINES = {
         "Air-1, can you confirm she still has fries? Over.",
         "Air-1 here. She has SO many fries. Out.",
         "I have done this for ELEVEN years and now THIS.",
+        "I trained 8 years for this?",
+        "This is no longer about the law.",
+        "I missed my daughter's recital. For fries.",
+        "Captain, I can hear her chewing on the comms.",
+        "Dispatch, I am no longer the same officer.",
     ],
     # Stage 4: Existential crisis
     "existential": [

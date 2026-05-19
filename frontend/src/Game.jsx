@@ -17,14 +17,29 @@ const API = `${BACKEND_URL}/api`;
 
 const IMG = {
     player: "/angel_car.png",
-    police: "https://static.prod-images.emergentagent.com/jobs/f6836503-9171-41cb-82ba-84c20e30f37b/images/b7b450b1d49dbc9392dd76336358347391483c010d4d999683a2f8565eff1693.png",
-    civilian: "https://static.prod-images.emergentagent.com/jobs/f6836503-9171-41cb-82ba-84c20e30f37b/images/7fc8664eaa0361c1bc2f53ce3caeab361c66ad7c7b9fb096b47a15d91edebf44.png",
-    cone: "https://static.prod-images.emergentagent.com/jobs/f6836503-9171-41cb-82ba-84c20e30f37b/images/4e96c5de105a73acbc056c9b5861d1096ccbe526bebe0dbc0d29a5aac60d4b6f.png",
-    barrier: "https://static.prod-images.emergentagent.com/jobs/f6836503-9171-41cb-82ba-84c20e30f37b/images/8850e2b423502dff2314355df22ef905d73a0dc30ded68a778901aeaa46d8dc6.png",
-    fry: "https://static.prod-images.emergentagent.com/jobs/f6836503-9171-41cb-82ba-84c20e30f37b/images/4168de88d6eb27cff5a441c70c774da5dc7cb72698bd7e193a33ff3dc2eab043.png",
+    police: "/police_car.png",
+    civilian: "/civilian_car.png",
+    cone: "/cone.png",
+    barrier: "/barrier.png",
+    fry: "/fry.png",
     angel: "/angel_portrait.png",
     angelPanic: "/angel_panic.png",
     angelExcited: "/angel_excited.png",
+    angelDetermined: "/angel_determined.png",
+};
+
+// Difficulty presets (selected on title)
+const DIFFICULTY = {
+    easy:   { label: "Easy",   startSpeed: 4.0, maxSpeed: 10, speedRamp: 0.00015, spawnIntervalBase: 1100, fryChance: 0.50, goldenChance: 0.06, maxHits: 4 },
+    medium: { label: "Medium", startSpeed: 5.0, maxSpeed: 13, speedRamp: 0.00025, spawnIntervalBase: 900,  fryChance: 0.38, goldenChance: 0.04, maxHits: 3 },
+    hard:   { label: "Hard",   startSpeed: 6.0, maxSpeed: 15, speedRamp: 0.00040, spawnIntervalBase: 720,  fryChance: 0.28, goldenChance: 0.03, maxHits: 2 },
+};
+
+// Angel's lines — adds her real-life personality
+const ANGEL_REAL_LINES = {
+    dodge:  ["That's what I thought.", "Be original.", "Chigga."],
+    crash:  ["Be so for real.", "A and B conversation, C see yourself out."],
+    golden: ["GOLDEN FRY!", "Be so for real, this is divine."],
 };
 
 const EARLY_INTRO_LINES = [
@@ -39,10 +54,21 @@ const ANGEL_LINES = {
         "No fry left behind!",
         "I can still save it!",
         "This is still edible!",
+        "That's what I thought.",
+        "Mine. All mine.",
+        "Yummy supremacy.",
+        "Crispy. Salted. Justified.",
+        "That fry has a family!",
     ],
     hit: [
         "They don't understand!",
         "I paid for LARGE fries!",
+        "Be so for real.",
+        "A and B conversation, C see yourself out.",
+        "THEY DON'T UNDERSTAND.",
+        "I asked for NO PICKLES.",
+        "I'm not the problem. They are.",
+        "Sir, this is a personal matter.",
     ],
     idle: [
         "No fry left behind!",
@@ -50,6 +76,24 @@ const ANGEL_LINES = {
         "This is still edible!",
         "They don't understand!",
         "I paid for LARGE fries!",
+        "Be so for real.",
+        "Be original.",
+        "That's what I thought.",
+        "Chigga.",
+        "Mind your business.",
+        "I'm just a girl.",
+        "I deserve this.",
+        "Don't talk to me.",
+        "Vibes only.",
+        "Period.",
+    ],
+    dodge: [
+        "That's what I thought.",
+        "Be original.",
+        "Chigga.",
+        "Move.",
+        "Try again, officer.",
+        "Skill issue.",
     ],
 };
 const pickLine = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -185,7 +229,7 @@ function AchievementToast({ ach }) {
 
 
 // ---------- Animated Title Screen ----------
-function TitleScreen({ onStart }) {
+function TitleScreen({ onStart, difficulty, setDifficulty }) {
     const [daily] = useState(() => getDailyChallenge());
     const [best] = useState(() => getBest());
     return (
@@ -233,6 +277,20 @@ function TitleScreen({ onStart }) {
             >
                 Start Chase
             </button>
+
+            {/* Difficulty selector */}
+            <div className="title-diff" data-testid="difficulty-selector">
+                {["easy", "medium", "hard"].map((d) => (
+                    <button
+                        key={d}
+                        data-testid={`diff-${d}`}
+                        className={`title-diff-btn ${difficulty === d ? "is-on" : ""}`}
+                        onClick={() => setDifficulty(d)}
+                    >
+                        {DIFFICULTY[d].label}
+                    </button>
+                ))}
+            </div>
 
             {/* Daily challenge card */}
             <div className="title-daily" data-testid="daily-challenge">
@@ -717,6 +775,9 @@ function GameOverTicket({ distance, fries, dodged, onRestart, onTitle, onReplay 
 // ---------- Main Game ----------
 export default function Game() {
     const [screen, setScreen] = useState("title"); // title | loading | intro | playing | paused | caught | gameover
+    const [difficulty, setDifficulty] = useState("medium");
+    const diffRef = useRef(DIFFICULTY.medium);
+    useEffect(() => { diffRef.current = DIFFICULTY[difficulty]; }, [difficulty]);
     const [lane, setLane] = useState(1);
     const [distance, setDistance] = useState(0);
     const [fries, setFries] = useState(0);
@@ -819,13 +880,13 @@ export default function Game() {
             music.start();
             music.startSiren();
         }
-        // Dramatic bass drop at chase start
         sfx.bassDrop();
+        const d = DIFFICULTY[difficulty];
         // Reset
         entitiesRef.current = [];
         stateRef.current = {
             lane: 1,
-            speed: 5,
+            speed: d.startSpeed,
             roadOffset: 0,
             spawnTimer: 0,
             radioTimer: 0,
@@ -954,6 +1015,9 @@ export default function Game() {
                     interjection: res.data.interjection || "",
                     nonce: Date.now() + Math.random(),
                 });
+                if ((res.data.stage || phase) === "existential") {
+                    pushAchievement("radio_existential");
+                }
             }
         } catch {
             // keep previous line silently
@@ -963,6 +1027,20 @@ export default function Game() {
     // Controls: keyboard
     useEffect(() => {
         const onKey = (e) => {
+            if (e.key === "Escape" || e.key.toLowerCase() === "p") {
+                if (screen === "playing") {
+                    e.preventDefault();
+                    setPaused(true);
+                    setScreen("paused");
+                    return;
+                }
+                if (screen === "paused") {
+                    e.preventDefault();
+                    setPaused(false);
+                    setScreen("playing");
+                    return;
+                }
+            }
             if (screen !== "playing") return;
             if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") {
                 e.preventDefault();
@@ -1021,13 +1099,19 @@ export default function Game() {
             stateRef.current.hits += 1;
             setHits(stateRef.current.hits);
             sfx.crash();
+            vibrate([120, 60, 80]);
             setShellShake(true);
             setTimeout(() => setShellShake(false), 320);
             const id = Date.now() + Math.random();
             setFlashes((f) => [...f, id]);
             setTimeout(() => setFlashes((f) => f.filter((x) => x !== id)), 350);
             stateRef.current.speed = Math.max(4, stateRef.current.speed - 1.5);
-            if (stateRef.current.hits >= MAX_HITS) {
+            // Combo resets on hit
+            comboRef.current = 0;
+            setCombo(0);
+            showAngelQuote(pickLine(ANGEL_LINES.hit));
+            if (stateRef.current.hits === 1) pushAchievement("wanted");
+            if (stateRef.current.hits >= diffRef.current.maxHits) {
                 stateRef.current.running = false;
                 sfx.gameover();
                 const music = getMusic();
@@ -1041,6 +1125,7 @@ export default function Game() {
                     distance: stateRef.current.distance,
                     fries: stateRef.current.fries,
                 }).catch(() => {});
+                recordRun({ distance: stateRef.current.distance, fries: stateRef.current.fries });
                 // Trigger caught cutscene before ticket
                 setScreen("caught");
             } else if (stateRef.current.hits >= 2) {
@@ -1086,8 +1171,10 @@ export default function Game() {
             frenzyEndAtRef.current = performance.now() + 6000;
             sfx.frenzyStart();
             showComboBanner("FRY FRENZY!", "frenzy");
-            // Immediate chaotic radio
+            pushAchievement("frenzy_start");
+            reportChallengeProgress("frenzy", 1);
             fetchRadio();
+            vibrate([60, 40, 60]);
         };
 
         const startTurbo = (durationMs = 2200) => {
@@ -1102,16 +1189,22 @@ export default function Game() {
             sfx.crunch();
             // Combo logic
             comboRef.current += 1;
-            comboTimerRef.current = 2500; // 2.5s window
+            comboTimerRef.current = 2500;
             setCombo(comboRef.current);
             const c = comboRef.current;
             if (c === 2)      showComboBanner("Fry Combo x2!");
-            else if (c === 5) { showComboBanner("Fry Combo x5!"); sfx.comboPing(2); }
-            else if (c === 10 && !frenzyRef.current) {
+            else if (c === 5) {
+                showComboBanner("Fry Combo x5!");
+                sfx.comboPing(2);
+                pushAchievement("combo_master");
+                reportChallengeProgress("combo", 5);
+            } else if (c === 10 && !frenzyRef.current) {
                 startFrenzy();
             } else if (c > 2 && c % 3 === 0) {
                 sfx.comboPing(1);
             }
+            if (stateRef.current.fries === 1) pushAchievement("first_fry");
+            reportChallengeProgress("fries", stateRef.current.fries);
             const id = Date.now() + Math.random();
             setPops((p) => [...p, { id, x, y, text: `+1 🍟${c >= 2 ? ` ×${c}` : ""}`, golden: false }]);
             setTimeout(() => setPops((p) => p.filter((q) => q.id !== id)), 800);
@@ -1167,9 +1260,11 @@ export default function Game() {
                 if (usedLanes.size >= 3) break;
 
                 const r = Math.random();
+                const goldChance = diffRef.current.goldenChance;
+                const fryChance = diffRef.current.fryChance;
                 let type;
-                if (r < 0.04) type = "golden_fry";
-                else if (r < 0.38) type = "fry";
+                if (r < goldChance) type = "golden_fry";
+                else if (r < goldChance + fryChance) type = "fry";
                 else type = OBSTACLE_TYPES[Math.floor(Math.random() * OBSTACLE_TYPES.length)];
 
                 entitiesRef.current.push({
@@ -1187,9 +1282,13 @@ export default function Game() {
             last = now;
             const s = stateRef.current;
             if (!s.running) return;
+            if (pausedRef.current) {
+                raf = requestAnimationFrame(loop);
+                return;
+            }
 
-            // Speed up over time (slow-motion halves movement; turbo / frenzy speed up)
-            s.speed = Math.min(13, s.speed + 0.00025 * dt);
+            // Speed up over time (difficulty-aware)
+            s.speed = Math.min(diffRef.current.maxSpeed, s.speed + diffRef.current.speedRamp * dt);
             let multiplier = 1;
             if (slowMoRef.current) multiplier = 0.35;
             else if (turboRef.current) multiplier = 1.55;
@@ -1295,6 +1394,7 @@ export default function Game() {
                     showEventBanner("🚌 BUS CROSSING!");
                     sfx.horn();
                     setTimeout(() => sfx.horn(), 600);
+                    setTimeout(() => pushAchievement("bus_dodger"), 2200);
                 } else {
                     // CONSTRUCTION ZONE — burst of cones + barriers
                     showEventBanner("🚧 CONSTRUCTION ZONE!");
@@ -1352,11 +1452,15 @@ export default function Game() {
             if (newDist !== s.distance) {
                 s.distance = newDist;
                 setDistance(newDist);
+                if (newDist === 100) pushAchievement("dist_100");
+                else if (newDist === 500) pushAchievement("dist_500");
+                else if (newDist === 1000) pushAchievement("dist_1000");
+                reportChallengeProgress("distance", newDist);
             }
 
             // Spawning
             s.spawnTimer += dt;
-            const spawnInterval = Math.max(380, 900 - s.speed * 38);
+            const spawnInterval = Math.max(380, diffRef.current.spawnIntervalBase - s.speed * 38);
             if (s.spawnTimer > spawnInterval) {
                 s.spawnTimer = 0;
                 spawn();
@@ -1409,6 +1513,10 @@ export default function Game() {
                     if (e.type === "civilian") {
                         s.dodged += 1;
                         setDodged(s.dodged);
+                        if (s.dodged === 1 || s.dodged % 5 === 0) {
+                            showAngelQuote(pickLine(ANGEL_LINES.dodge));
+                        }
+                        reportChallengeProgress("dodge", s.dodged);
                     }
                     ents.splice(i, 1);
                 }
@@ -1472,6 +1580,14 @@ export default function Game() {
             {/* Road */}
             <div ref={roadRef} className="road" data-testid="road" />
 
+            {/* Lane stripe markers (drawn over the road art) */}
+            {screen === "playing" && (
+                <>
+                    <div className="lane-stripe lane-stripe--l" aria-hidden />
+                    <div className="lane-stripe lane-stripe--r" aria-hidden />
+                </>
+            )}
+
             {/* Weather lighting overlays */}
             <div className={`weather-tint weather-tint--${weather}`} aria-hidden />
             {weather === "rain" && (
@@ -1511,14 +1627,23 @@ export default function Game() {
                 let w = 56, h = 56;
                 let extraClass = "";
                 let src = IMG[e.type];
-                if (e.type === "civilian") { w = 64; h = 100; }
-                else if (e.type === "barrier") { w = 90; h = 30; }
-                else if (e.type === "cone") { w = 48; h = 60; }
-                else if (e.type === "fry") { w = 46; h = 60; extraClass = "fry-glow"; src = IMG.fry; }
-                else if (e.type === "golden_fry") { w = 56; h = 72; extraClass = "fry-glow is-golden"; src = IMG.fry; }
+                if (e.type === "civilian") { w = 68; h = 104; }
+                else if (e.type === "barrier") { w = 96; h = 36; }
+                else if (e.type === "cone") { w = 52; h = 64; }
+                else if (e.type === "fry") { w = 52; h = 64; extraClass = "fry-glow"; src = IMG.fry; }
+                else if (e.type === "golden_fry") { w = 62; h = 76; extraClass = "fry-glow is-golden"; src = IMG.fry; }
                 style.width = w; style.height = h;
+                const isCollectible = e.type === "fry" || e.type === "golden_fry";
+                const shadowW = Math.round(w * (isCollectible ? 0.55 : 0.78));
                 return (
-                    <div key={e.id} className={`sprite ${extraClass}`} style={style}>
+                    <div key={e.id} className={`sprite sprite-${e.type} ${extraClass}`} style={style}>
+                        {!isCollectible && (
+                            <span
+                                className="sprite-shadow"
+                                style={{ width: shadowW, bottom: -8 }}
+                                aria-hidden
+                            />
+                        )}
                         <img
                             src={src}
                             alt={e.type}
@@ -1575,13 +1700,17 @@ export default function Game() {
 
             {/* Police car */}
             {screen === "playing" && (
-                <img
-                    src={IMG.police}
-                    alt="police"
-                    className={`sprite police-car ${policePanic ? "police-panic" : ""}`}
-                    style={{ left: "50%" }}
-                    draggable={false}
-                />
+                <div className={`sprite police-car-wrap ${policePanic ? "police-panic" : ""}`} style={{ left: "50%" }} data-testid="police-car">
+                    <span className="sprite-shadow sprite-shadow--police" aria-hidden />
+                    <span className="police-roof-light police-roof-light--red" aria-hidden />
+                    <span className="police-roof-light police-roof-light--blue" aria-hidden />
+                    <img
+                        src={IMG.police}
+                        alt="police"
+                        className="police-car-img"
+                        draggable={false}
+                    />
+                </div>
             )}
 
             {/* Police panic emoji */}
@@ -1602,14 +1731,20 @@ export default function Game() {
 
             {/* Player car */}
             {screen === "playing" && (
-                <img
-                    src={IMG.player}
-                    alt="player"
-                    className="sprite player-car"
+                <div
+                    className="sprite player-car-wrap"
                     style={{ left: playerX, transform: "translateX(-50%)" }}
-                    draggable={false}
-                    data-testid="player-car"
-                />
+                    data-testid="player-car-wrap"
+                >
+                    <span className="sprite-shadow sprite-shadow--player" aria-hidden />
+                    <img
+                        src={IMG.player}
+                        alt="player"
+                        className="player-car-img"
+                        draggable={false}
+                        data-testid="player-car"
+                    />
+                </div>
             )}
 
             {/* Angel's quote bubble over the player car */}
@@ -1652,7 +1787,7 @@ export default function Game() {
                         <div className="hud-pill" data-testid="hud-hits">
                             <span className="text-white/70 text-[10px] uppercase">Strikes</span>
                             <span>
-                                {[...Array(MAX_HITS)].map((_, i) => (
+                                {[...Array(diffRef.current.maxHits)].map((_, i) => (
                                     <span key={i} style={{ color: i < hits ? "#DA291C" : "#374151" }}>●</span>
                                 ))}
                             </span>
@@ -1662,16 +1797,26 @@ export default function Game() {
                     {/* Reactive Angel face badge */}
                     <div
                         className={`angel-face-badge ${
-                            hits >= 2 ? "is-panic" : combo >= 5 ? "is-excited" : "is-calm"
+                            hits >= 2 ? "is-panic" : frenzy ? "is-determined" : combo >= 5 ? "is-excited" : "is-calm"
                         }`}
                         data-testid="angel-face"
                     >
                         <img
-                            src={hits >= 2 ? IMG.angelPanic : combo >= 5 ? IMG.angelExcited : IMG.angel}
+                            src={hits >= 2 ? IMG.angelPanic : frenzy ? IMG.angelDetermined : combo >= 5 ? IMG.angelExcited : IMG.angel}
                             alt="Angel"
                             draggable={false}
                         />
                     </div>
+
+                    {/* Pause button */}
+                    <button
+                        className="pause-btn"
+                        data-testid="pause-button"
+                        onClick={() => { setPaused(true); setScreen("paused"); }}
+                        aria-label="Pause"
+                    >
+                        ⏸
+                    </button>
 
                     <RadioBox radio={radio} />
 
@@ -1714,9 +1859,26 @@ export default function Game() {
                 </div>
             )}
 
+            {/* Achievement toast (overlay-level, above everything except final modal) */}
+            <AchievementToast ach={achToast} />
+
             {/* Screens */}
             {screen === "title" && (
-                <TitleScreen onStart={() => { unlockAudio(); setScreen("intro"); }} />
+                <TitleScreen
+                    onStart={() => { unlockAudio(); setScreen("loading"); }}
+                    difficulty={difficulty}
+                    setDifficulty={setDifficulty}
+                />
+            )}
+            {screen === "loading" && (
+                <LoadingScreen onDone={() => setScreen("intro")} duration={1900} />
+            )}
+            {screen === "paused" && (
+                <PauseMenu
+                    onResume={() => { setPaused(false); setScreen("playing"); }}
+                    onRestart={() => { setPaused(false); startGame(); }}
+                    onTitle={() => { setPaused(false); setScreen("title"); }}
+                />
             )}
             {screen === "intro" && (
                 <IntroScreen onContinue={startGame} />
