@@ -16,12 +16,15 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const IMG = {
-    player: "https://static.prod-images.emergentagent.com/jobs/f6836503-9171-41cb-82ba-84c20e30f37b/images/44c2b25b890a4bf62ce4d938079f84ea50ad336efea5d8dab04ae3d93a938b37.png",
+    player: "/angel_car.png",
     police: "https://static.prod-images.emergentagent.com/jobs/f6836503-9171-41cb-82ba-84c20e30f37b/images/b7b450b1d49dbc9392dd76336358347391483c010d4d999683a2f8565eff1693.png",
     civilian: "https://static.prod-images.emergentagent.com/jobs/f6836503-9171-41cb-82ba-84c20e30f37b/images/7fc8664eaa0361c1bc2f53ce3caeab361c66ad7c7b9fb096b47a15d91edebf44.png",
     cone: "https://static.prod-images.emergentagent.com/jobs/f6836503-9171-41cb-82ba-84c20e30f37b/images/4e96c5de105a73acbc056c9b5861d1096ccbe526bebe0dbc0d29a5aac60d4b6f.png",
     barrier: "https://static.prod-images.emergentagent.com/jobs/f6836503-9171-41cb-82ba-84c20e30f37b/images/8850e2b423502dff2314355df22ef905d73a0dc30ded68a778901aeaa46d8dc6.png",
     fry: "https://static.prod-images.emergentagent.com/jobs/f6836503-9171-41cb-82ba-84c20e30f37b/images/4168de88d6eb27cff5a441c70c774da5dc7cb72698bd7e193a33ff3dc2eab043.png",
+    angel: "/angel_portrait.png",
+    angelPanic: "/angel_panic.png",
+    angelExcited: "/angel_excited.png",
 };
 
 const EARLY_INTRO_LINES = [
@@ -207,6 +210,9 @@ function TitleScreen({ onStart }) {
             </div>
 
             <div className="text-center relative z-10">
+                <div className="title-mascot">
+                    <img src={IMG.angel} alt="Angel" className="title-mascot-img" draggable={false} />
+                </div>
                 <div className="title-wobble">
                     <div className="font-heading title-stroke text-5xl sm:text-6xl font-black tracking-tight uppercase leading-none">
                         Wanted<br />for Fries
@@ -302,7 +308,7 @@ function IntroScreen({ onContinue }) {
                     <span className="cine-mcd-label">McDriveThru</span>
                 </div>
                 <div className="cine-angel cine-angel--walk">
-                    <span className="cine-angel-emoji" role="img" aria-label="Angel">🧑‍🦱</span>
+                    <img src={IMG.angel} alt="Angel" className="cine-angel-img" draggable={false} />
                     <span className="cine-bag" role="img" aria-label="Bag">🛍️</span>
                 </div>
                 <div className="cine-caption">A perfectly normal Tuesday evening...</div>
@@ -311,7 +317,7 @@ function IntroScreen({ onContinue }) {
             <CutscenePanel active={panel.id === "car"} id="car">
                 <div className="cine-city-bg" />
                 <div className="cine-car-scene">
-                    <span className="cine-angel-emoji cine-bounce-in">🧑‍🦱</span>
+                    <img src={IMG.angel} alt="" className="cine-angel-img cine-bounce-in" draggable={false} />
                     <img src={IMG.player} alt="" className="cine-car-img cine-bounce-in" style={{ animationDelay: "0.3s" }} />
                 </div>
                 <div className="cine-notes">
@@ -352,7 +358,7 @@ function IntroScreen({ onContinue }) {
             <CutscenePanel active={panel.id === "eat"} id="eat">
                 <div className="cine-closeup-bg" />
                 <div className="cine-angel-closeup">
-                    <span className="cine-face">😋</span>
+                    <img src={IMG.angelExcited} alt="" className="cine-angel-closeup-img" draggable={false} />
                     <span className="cine-fry-eat">🍟</span>
                 </div>
                 <div className="cine-notes cine-notes--center">
@@ -379,7 +385,7 @@ function IntroScreen({ onContinue }) {
             <CutscenePanel active={panel.id === "reach"} id="reach">
                 <div className="cine-zoom-bg" />
                 <div className="cine-angel-zoom">
-                    <span className="cine-face cine-face--panic">😱</span>
+                    <img src={IMG.angelPanic} alt="" className="cine-angel-zoom-img" draggable={false} />
                 </div>
                 <div className="cine-zoom-lines" />
                 <div className="cine-caption cine-caption--dramatic">"I CAN SAVE IT!"</div>
@@ -1651,6 +1657,20 @@ export default function Game() {
                                 ))}
                             </span>
                         </div>
+                    </div>
+
+                    {/* Reactive Angel face badge */}
+                    <div
+                        className={`angel-face-badge ${
+                            hits >= 2 ? "is-panic" : combo >= 5 ? "is-excited" : "is-calm"
+                        }`}
+                        data-testid="angel-face"
+                    >
+                        <img
+                            src={hits >= 2 ? IMG.angelPanic : combo >= 5 ? IMG.angelExcited : IMG.angel}
+                            alt="Angel"
+                            draggable={false}
+                        />
                     </div>
 
                     <RadioBox radio={radio} />
